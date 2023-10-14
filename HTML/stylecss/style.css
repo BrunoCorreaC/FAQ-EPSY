@@ -1,21 +1,97 @@
-:root{
-    
-    --background-color:white;
+:root {
+    --color: black;
+    --background-color: white, black;
 }
+
+* {
+    padding: 0;
+    margin: 0;
+}
+
 body {
-    background-color:rgb(177, 226, 177);
+    background-color: rgb(177, 226, 177);
 }
-h1{
-background-color:var(--background-color);
+
+header {
+    background-image: url("../img/tela_fundo1.jpg")    
 }
-button{
-    background-color:#f5f5f5;
+
+.navbar {
+    width: 100%;
+    padding: 10px 0;
+    margin: auto;
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
 }
+
+.navbarimg {
+    display: flex;
+    align-items: flex-start;
+} 
+
+.navLinks {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+}
+
+.navbar ul {
+    list-style: none;
+    display: flex;
+    padding: 0;
+    justify-content: end;
+    align-items: center;
+}
+
+
+.navbar li {
+    flex-direction: column;
+    padding: 5px;
+
+    block-size: 80px;
+    margin-right: 20px;
+}
+
+header h1 {
+    color: #FFF
+}
+
+main {
+    margin: 24px;
+
+}
+
+section {
+    margin: 64px;
+
+}
+
+.botao_centro {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 25%;
+    margin: auto;
+}
+
+
+
+h1 {
+    background-color: var(--background-color);
+}
+
+h2 {
+    background: var(--background-color);
+
+}
+
+button {
+    background-color: #f5f5f5;
+}
+
 button:hover {
-    background-color:#c5c5c5;
-}
-p{
-    /*font-size:var(--font-size);*/
+    background-color: #c5c5c5;
 }
 
 #pequeno {
