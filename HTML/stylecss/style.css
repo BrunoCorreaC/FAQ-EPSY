@@ -1,0 +1,23 @@
+:root{
+    
+    --background-color:white;
+}
+body {
+    background-color:rgb(177, 226, 177);
+}
+h1{
+background-color:var(--background-color);
+}
+button{
+    background-color:#f5f5f5;
+}
+button:hover {
+    background-color:#c5c5c5;
+}
+p{
+    /*font-size:var(--font-size);*/
+}
+
+#pequeno {
+    font-size: 32px;
+}
