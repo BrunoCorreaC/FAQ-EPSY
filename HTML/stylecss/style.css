@@ -16,41 +16,55 @@ header {
     background-image: url("../img/tela_fundo1.jpg")    
 }
 
+/* Estilo do header, se necessário */
+header {
+    background-image: url("../img/tela_fundo1.jpg");
+}
+
+/* Estilo do logotipo */
+.navbarimg a {
+    text-decoration: none; /* Remover decoração de link */
+    padding-left: 90px;
+
+}
+
+/* Estilo da barra de navegação */
 .navbar {
     width: 100%;
     padding: 10px 0;
     margin: auto;
     display: flex;
-    justify-content: center;
-    flex-direction: row;
+    justify-content: space-between; /* Alinhar a logo à esquerda e os links à direita */
+    align-items: center; /* Alinhar verticalmente no centro */
 }
 
-.navbarimg {
-    display: flex;
-    align-items: flex-start;
-} 
 
-.navLinks {
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
-}
-
-.navbar ul {
+/* Estilo dos links de navegação */
+.navLinks ul {
     list-style: none;
     display: flex;
-    padding: 0;
-    justify-content: end;
-    align-items: center;
+    padding-right: 80px;
 }
 
+.navLinks li {
+    margin-right: 20px; /* Espaço entre os itens do menu */
+}
 
-.navbar li {
-    flex-direction: column;
-    padding: 5px;
+.navLinks a {
+    text-decoration: none; /* Remover decoração de link */
+    color: white; /* Cor do texto dos links */
+    font-weight: bold; /* Estilo de fonte para links */
+}
 
-    block-size: 80px;
-    margin-right: 20px;
+/* Estilo para o link "Falar com um consultor" */
+.navLinks li:nth-child(2) a {
+    background-color: #007bff; /* Cor de fundo */
+    color: #fff; /* Cor do texto */
+    padding: 5px 15px; /* Espaçamento interno */
+    border-radius: 5px; /* Borda arredondada */
+    text-align: center;
+    text-transform: uppercase; /* Transformar o texto em maiúsculas */
+    font-weight: normal; /* Resetar o peso da fonte */
 }
 
 header h1 {
