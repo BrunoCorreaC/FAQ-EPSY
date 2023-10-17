@@ -9,11 +9,7 @@
 }
 
 body {
-    background-color: rgb(177, 226, 177);
-}
-
-header {
-    background-image: url("../img/tela_fundo1.jpg")    
+    background-color: #f9f9f9;
 }
 
 /* Estilo do header, se necessário */
@@ -88,8 +84,6 @@ section {
     width: 25%;
     margin: auto;
 }
-
-
 
 h1 {
     background-color: var(--background-color);
