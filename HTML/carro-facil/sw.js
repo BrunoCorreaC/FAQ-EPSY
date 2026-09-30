@@ -1,4 +1,4 @@
-const CACHE = 'carro-facil-v2';
+const CACHE = 'carro-facil-v3';
 const ARQUIVOS = ['./', 'index.html', 'style.css', 'js/data.js', 'js/config.js', 'js/app.js', 'icon.svg', 'manifest.json'];
 
 self.addEventListener('install', e => {
@@ -12,7 +12,7 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
+  if (e.request.method !== 'GET' || new URL(e.request.url).origin !== self.location.origin) return;
   e.respondWith(
     fetch(e.request).then(r => {
       const copia = r.clone();

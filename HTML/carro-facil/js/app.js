@@ -20,8 +20,21 @@
   const sb = (window.supabase && cfg.supabaseUrl && cfg.supabaseKey)
     ? window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, { auth: { flowType: 'pkce' } }) : null;
   let user = null;
-  const precisaLogin = () => !!sb && !user;
   const bloqueio = '<a class="btn grande" href="#/entrar">🔒 Entre para ver o contato</a>';
+  let tels = {}, telsOk = false; // chave -> telefone; vem do banco e só existe com login
+
+  // botões de contato: 'grande' = versão da página do carro
+  const botoesContato = (chave, msg, grande = false) => {
+    if (!sb) return '<p class="meta">Contato indisponível no momento.</p>';
+    if (!user) return bloqueio;
+    const t = tels[chave];
+    if (!t) return `<p class="meta">${telsOk ? 'Contato indisponível.' : 'Carregando contato…'}</p>`;
+    return grande
+      ? `<a class="btn zap grande" target="_blank" rel="noopener" href="${wa(t, msg)}">Falar no WhatsApp</a>
+         <a class="btn grande sec" href="tel:+${t}">📞 Ligar</a>`
+      : `<a class="btn" href="tel:+${t}">📞 Ligar ${fmtTel(t)}</a>
+         <a class="btn zap" target="_blank" rel="noopener" href="${wa(t, msg)}">WhatsApp</a>`;
+  };
 
   const atualizaFavCount = () => { document.getElementById('fav-count').textContent = favs.length; };
   const atualizaConta = () => {
@@ -44,12 +57,16 @@
     checks = [...new Set([...(data?.passos ?? []), ...checks])];
     guardaLocal(); salvaPrefs();
   };
+  const carregaContatos = async () => {
+    const { data } = await sb.from('contatos').select('chave,telefone');
+    tels = Object.fromEntries((data ?? []).map(x => [x.chave, x.telefone])); telsOk = true;
+  };
   const mudouUsuario = async sessao => {
     const novo = sessao?.user ?? null;
     if (novo?.id === user?.id) return; // renovação de token
     user = novo;
-    if (user) { try { await carregaPrefs(); } catch { /* segue com os dados locais */ } }
-    else { favs = []; checks = []; guardaLocal(); } // não deixa dados de uma conta em aparelho compartilhado
+    if (user) { try { await Promise.all([carregaPrefs(), carregaContatos()]); } catch { /* segue com os dados locais */ } }
+    else { tels = {}; telsOk = false; favs = []; checks = []; guardaLocal(); } // não deixa dados de uma conta em aparelho compartilhado
     atualizaConta(); rota();
   };
   const traduzErro = e => {
@@ -94,8 +111,7 @@
         <p class="tags">${d.servicos.map(s => `<span>${esc(s)}</span>`).join('')}</p>
       </div>
       <div class="acoes">
-        ${precisaLogin() ? bloqueio : `<a class="btn" href="tel:+${d.tel}">📞 Ligar ${fmtTel(d.tel)}</a>
-        <a class="btn zap" target="_blank" rel="noopener" href="${wa(d.tel, 'Olá! Vi seu contato no app Carro Fácil e preciso de ajuda com a documentação de um carro.')}">WhatsApp</a>`}
+        ${botoesContato('d' + d.id, 'Olá! Vi seu contato no app Carro Fácil e preciso de ajuda com a documentação de um carro.')}
       </div>
     </article>`;
 
@@ -150,8 +166,7 @@
         <p>${esc(c.obs)}</p>
         <p class="meta">Vendedor: ${esc(c.vendedor)} · 📍 ${esc(c.cidade)}</p>
         <div class="acoes fixa">
-          ${precisaLogin() ? bloqueio : `<a class="btn zap grande" target="_blank" rel="noopener" href="${wa(c.tel, msg)}">Falar no WhatsApp</a>
-          <a class="btn grande sec" href="tel:+${c.tel}">📞 Ligar</a>`}
+          ${botoesContato('c' + c.id, msg, true)}
           <button class="btn grande sec" data-fav="${c.id}">${favs.includes(c.id) ? '♥ Favorito' : '♡ Favoritar'}</button>
         </div>
         <div class="aviso">💡 Antes de fechar: peça laudo cautelar e consulte débitos. <a href="#/guia">Ver guia</a></div>
