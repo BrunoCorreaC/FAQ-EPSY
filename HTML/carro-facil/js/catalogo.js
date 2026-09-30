@@ -180,6 +180,11 @@
         <p class="hero-sub">Filtre por região, modelo, ano e valor e fale direto com a garagem.</p>
         <div class="hero-stats"><span><strong>${V.length}</strong> carros</span><span><strong>${new Set(V.map(v => v.garagem_id)).size}</strong> garagens</span><span><strong>${new Set(V.map(v => v.cidade)).size}</strong> cidades</span></div>
       </div></section>` : '';
+    // destaques: com preferências salvas, os que mais combinam; senão, os mais recentes
+    const bcv = S.busca && Object.keys(S.busca).length;
+    const dest = mostraHero ? [...V].sort((a, b) => bcv ? (pontua(b, S.busca) - pontua(a, S.busca)) || (new Date(b.criado_em) - new Date(a.criado_em)) : new Date(b.criado_em) - new Date(a.criado_em)).slice(0, 6) : [];
+    const destaques = dest.length ? `<section class="destaques" aria-label="Em destaque"><h2>Em destaque</h2>
+      <div class="trilho">${dest.map(v => card(v, bcv ? pontua(v, S.busca) : null)).join('')}</div></section>` : '';
     const cats = `<div class="cats" role="group" aria-label="Categorias">${TIPOS.filter(t => cont[t]).map(t =>
       `<button class="cat ${F.tipo === t ? 'on' : ''}" data-acao="tipoCat" data-t="${t}"><strong>${t}</strong><span>${cont[t]} carro${cont[t] === 1 ? '' : 's'}</span></button>`).join('')}</div>`;
     const nFiltros = ativos.filter(([k]) => k !== 'q').length;
@@ -194,6 +199,7 @@
           ${RAPIDOS.map((r, i) => { const [k] = Object.keys(r.f); return `<button class="chip ${F[k] === r.f[k] ? 'on' : ''}" data-acao="rapido" data-i="${i}">${r.t}</button>`; }).join('')}
         </div></section>
       <section class="pagina">
+        ${destaques}
         ${mostraHero || F.tipo ? cats : ''}
         ${ativos.filter(([k]) => k !== 'q').length ? `<div class="chips ativos">${ativos.filter(([k]) => k !== 'q').map(([k, v]) => `<button class="chip on" data-acao="removeFiltro" data-k="${k}" aria-label="Remover filtro ${esc(ROTULOS[k](v))}">${esc(ROTULOS[k](v))} ✕</button>`).join('')}
           <button class="chip salvar" data-acao="salvaBuscaAtual">★ Salvar como minha busca</button></div>` : ''}

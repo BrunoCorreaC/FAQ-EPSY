@@ -139,7 +139,7 @@ dialog footer .btn { flex: 1; } dialog footer .btn-link { flex: none; }
 #toast.on { opacity: 1; transform: translate(-50%, 0); } @media (min-width: 820px) { #toast { bottom: 24px; } }
 @media (prefers-reduced-motion: reduce) { #toast { transition: none; } }
 
-/* vitrine, categorias e selos */
+/* entrada, destaques, categorias e selos */
 .hero { background: radial-gradient(120% 140% at 85% -10%, #1fa37a 0%, transparent 55%), linear-gradient(160deg, #0a7a5a, #064d3a); color: #fff; padding: 26px 16px 30px; }
 .hero-in { max-width: 1080px; margin: 0 auto; }
 .eyebrow { text-transform: uppercase; letter-spacing: .09em; font-size: .72rem; font-weight: 700; opacity: .85; margin-bottom: 6px; }
@@ -157,3 +157,8 @@ dialog footer .btn { flex: 1; } dialog footer .btn-link { flex: none; }
 @media (prefers-reduced-motion: reduce) { .card.veic { transition: none; } .card.veic:hover { transform: none; } }
 .boas { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 18px; border-radius: 20px; color: #fff; background: radial-gradient(120% 160% at 90% -20%, #1fa37a 0%, transparent 55%), linear-gradient(160deg, #0a7a5a, #064d3a); }
 .boas h2 { margin: 0; } .boas p { margin: 0; opacity: .9; } .btn.claro { background: #fff; color: #064d3a; }
+
+.destaques { margin: 0 -16px 18px; } .destaques h2 { padding: 0 16px; }
+.trilho { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 16px 12px; scrollbar-width: none; }
+.trilho::-webkit-scrollbar { display: none; } .trilho > .card { flex: 0 0 min(78%, 270px); scroll-snap-align: start; margin-bottom: 0; }
+@media (min-width: 820px) { .destaques { margin: 0 0 18px; } .destaques h2, .trilho { padding-left: 0; padding-right: 0; } .trilho > .card { flex-basis: 260px; } }
