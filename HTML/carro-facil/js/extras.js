@@ -15,7 +15,7 @@
     const botoes = !CF.sb ? '<p class="meta">Contato indisponível.</p>'
       : !S.user ? '<a class="btn sec" href="#/entrar">🔒 Entre para ver o contato</a>'
       : !t ? `<p class="meta">${S.telsOk ? 'Contato indisponível.' : 'Carregando contato…'}</p>`
-      : `<a class="btn" href="tel:+${t}">📞 ${esc(CF.fmtTel(t))}</a><a class="btn zap" target="_blank" rel="noopener" href="${CF.wa(t, 'Olá! Vi seu contato no Carro Fácil e preciso de ajuda com a documentação de um carro.')}">WhatsApp</a>`;
+      : `<a class="btn" href="tel:+${t}">📞 ${esc(CF.fmtTel(t))}</a><a class="btn zap" target="_blank" rel="noopener" href="${CF.wa(t, 'Olá! Vi seu contato no app Cadê meu carro? e preciso de ajuda com a documentação de um carro.')}">WhatsApp</a>`;
     return `<article class="card desp"><div><h3>${esc(d.nome)}</h3>
       <p class="meta">📍 ${esc(d.bairro)}, ${esc(d.cidade)}${km != null ? ` · ${km.toFixed(km < 10 ? 1 : 0)} km de você` : ''}</p>
       <p class="meta">🕒 ${esc(d.horario)} · ⭐ ${d.nota.toFixed(1)}</p>

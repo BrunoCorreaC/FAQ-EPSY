@@ -250,7 +250,7 @@
     const g = S.garagens[v.garagem_id] ?? {}; const fav = S.favs.includes(v.id);
     const meu = S.garagem && S.garagem.id === v.garagem_id;
     const enviado = S.enviados.has(v.id);
-    const msg = `Olá! Tenho interesse no ${v.marca} ${v.modelo} ${v.ano} (${brl(v.preco)}) que vi no Carro Fácil.`;
+    const msg = `Olá! Tenho interesse no ${v.marca} ${v.modelo} ${v.ano} (${brl(v.preco)}) que vi no app Cadê meu carro?`;
     const fotos = (v.fotos ?? []).map(CF.fotoUrl).filter(Boolean);
     const pct = S.busca && Object.keys(S.busca).length ? pontua(v, S.busca) : null;
     const spec = (k, x) => `<div><dt>${k}</dt><dd>${esc(x)}</dd></div>`;

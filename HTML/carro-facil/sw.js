@@ -1,4 +1,4 @@
-const CACHE = 'carro-facil-v4';
+const CACHE = 'cade-meu-carro-v5';
 const ARQUIVOS = ['./', 'index.html', 'style.css', 'js/config.js', 'js/data.js', 'js/core.js', 'js/catalogo.js', 'js/garagem.js', 'js/extras.js', 'js/main.js', 'icon.svg', 'manifest.json'];
 
 self.addEventListener('install', e => {

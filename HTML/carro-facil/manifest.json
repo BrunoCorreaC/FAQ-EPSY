@@ -1,6 +1,6 @@
 {
-  "name": "Carro Fácil",
-  "short_name": "Carro Fácil",
+  "name": "Cadê meu carro?",
+  "short_name": "Cadê meu carro?",
   "description": "Catálogo de carros, despachantes próximos e guia para o primeiro carro.",
   "start_url": "./index.html",
   "scope": "./",

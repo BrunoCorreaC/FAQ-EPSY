@@ -202,7 +202,7 @@
       return `<article class="card lead ${i.status}"><div><h3>${esc(i.nome)} ${i.status === 'novo' ? '<span class="tag novo">Novo</span>' : '<span class="tag">Atendido</span>'}</h3>
         <p class="meta">Interesse em <strong>${esc(carro)}</strong> · ${new Date(i.criado_em).toLocaleDateString('pt-BR')}</p>
         ${i.mensagem ? `<p class="citacao">“${esc(i.mensagem)}”</p>` : ''}</div>
-        <div class="acoes"><a class="btn zap" target="_blank" rel="noopener" href="${CF.wa(i.telefone, `Olá ${i.nome}! Aqui é da ${S.garagem.nome}. Vi seu interesse no ${carro} pelo Carro Fácil.`)}">WhatsApp ${esc(CF.fmtTel(i.telefone))}</a>
+        <div class="acoes"><a class="btn zap" target="_blank" rel="noopener" href="${CF.wa(i.telefone, `Olá ${i.nome}! Aqui é da ${S.garagem.nome}. Vi seu interesse no ${carro} pelo app Cadê meu carro?.`)}">WhatsApp ${esc(CF.fmtTel(i.telefone))}</a>
         ${i.status === 'novo' ? `<button class="btn sec" data-acao="atendido" data-id="${i.id}">Marcar atendido</button>` : ''}</div></article>`;
     };
     return { html: `<section class="pagina estreita"><h2>Interessados</h2>${l.length ? l.map(item).join('') : '<div class="vazio"><p>Quando um comprador tocar em "Tenho interesse" nos seus carros, ele aparece aqui.</p></div>'}</section>` };
