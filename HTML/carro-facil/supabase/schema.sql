@@ -32,3 +32,6 @@ create policy "logados leem contatos" on public.contatos
 -- sem policy de insert/update/delete: só o painel/admin grava.
 
 -- Os dados de exemplo (fictícios) estão na migração; troque pelos números reais no painel do Supabase.
+
+-- ATENÇÃO: os contatos de vendedores (chaves c<id>) foram substituídos por garagem_contatos.
+-- `contatos` agora guarda apenas despachantes (d1..d5). Veja 002_marketplace.sql.
