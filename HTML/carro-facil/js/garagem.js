@@ -10,10 +10,10 @@
     return dv(12) === +c[12] && dv(13) === +c[13];
   };
   const fmtCnpj = c => c ? c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : '';
-  const soGaragista = (precisaAprovada = false) => CF.papel() === 'garagista' && S.garagem && (!precisaAprovada || S.garagem.status_aprovacao === 'aprovada')
+  const soGaragista = (precisaAprovada = false) => CF.papel() === 'garagista' && S.garagem && (!precisaAprovada || CF.liberada())
     ? null
     : CF.papel() === 'garagista' && S.garagem
-    ? { html: '<section class="pagina vazio"><h2>Cadastro em análise</h2><p>Você poderá anunciar veículos assim que a sua garagem for aprovada.</p><a class="btn" href="#/painel">Voltar ao painel</a></section>' }
+    ? { html: `<section class="pagina vazio"><h2>${S.garagem.status_aprovacao === 'aprovada' ? 'Assinatura pendente' : 'Cadastro em análise'}</h2><p>${S.garagem.status_aprovacao === 'aprovada' ? 'Para anunciar veículos, a assinatura da sua garagem precisa estar ativa.' : 'Você poderá anunciar veículos assim que a sua garagem for aprovada.'}</p><a class="btn" href="${S.garagem.status_aprovacao === 'aprovada' ? '#/assinatura' : '#/painel'}">${S.garagem.status_aprovacao === 'aprovada' ? 'Ver assinatura' : 'Voltar ao painel'}</a></section>` }
     : { html: `<section class="pagina vazio"><h2>Área do garagista</h2><p>Para anunciar veículos, crie uma conta de garagista.</p><a class="btn grande" href="${S.user ? '#/perfil' : '#/entrar?papel=garagista'}">${S.user ? 'Completar perfil' : 'Criar conta de garagista'}</a></section>` };
 
   // ---------- entrar / criar conta ----------
@@ -154,6 +154,7 @@
           ${g && S.garagem ? `<p class="meta">${CF.ico('store', 'peq')} ${esc(S.garagem.nome)} · ${esc(S.garagem.cidade)}/${esc(S.garagem.uf)} <span class="tag ${S.garagem.status_aprovacao === 'aprovada' ? '' : 'novo'}">${{ aprovada: 'Aprovada', pendente: 'Em análise', suspensa: 'Suspensa' }[S.garagem.status_aprovacao]}</span></p>` : ''}
           ${!g ? `<p class="meta">${S.favs.length} favorito(s) · ${S.checks.length} de ${PASSOS.length} passos do guia</p>` : ''}</div>
         <div class="lista-links"><a class="btn sec" href="#/perfil">${p ? 'Editar perfil' : 'Completar perfil'}</a>
+          ${g ? '<a class="btn sec" href="#/assinatura">Minha assinatura</a>' : ''}
           ${g ? '<a class="btn sec" href="#/painel">Meus veículos</a><a class="btn sec" href="#/demanda">Clientes buscando</a><a class="btn sec" href="#/interessados">Interessados</a><a class="btn sec" href="#/radar">Radar de demanda</a>' : '<a class="btn sec" href="#/preferencias">Minhas preferências</a><a class="btn sec" href="#/favoritos">Favoritos</a>'}
           ${S.admin ? '<a class="btn sec" href="#/admin">Administração</a>' : ''}
           <button class="btn" data-acao="sair">Sair</button></div>
@@ -166,8 +167,16 @@
   // ---------- painel do garagista ----------
   CF.rotas.painel = async () => {
     const bloq = soGaragista(); if (bloq) return bloq;
-    const gid = S.garagem.id, ok = S.garagem.status_aprovacao === 'aprovada';
-    const aviso = ok ? '' : `<div class="aviso">${S.garagem.status_aprovacao === 'suspensa' ? 'Seu cadastro está suspenso. Fale com a equipe do Cadê meu carro?.' : 'Seu cadastro está <strong>em análise</strong>. Assim que for aprovado você poderá anunciar veículos e ver clientes buscando. Confira o CNPJ e o WhatsApp em <a href="#/perfil">Meu perfil</a>.'}</div>`;
+    const gid = S.garagem.id, aprov = S.garagem.status_aprovacao === 'aprovada';
+    try { S.assin = (await CF.sb.rpc('minha_assinatura')).data ?? S.assin; } catch { /* usa o último estado */ }
+    const ok = aprov && CF.liberada(), as = S.assin ?? {};
+    const d = x => x ? new Date(x + 'T12:00:00').toLocaleDateString('pt-BR') : '';
+    const aviso = !aprov
+      ? `<div class="aviso">${S.garagem.status_aprovacao === 'suspensa' ? 'Seu cadastro está suspenso. Fale com a equipe do Cadê meu carro?.' : 'Seu cadastro está <strong>em análise</strong>. Assim que for aprovado você poderá anunciar veículos e ver clientes buscando. Confira o CNPJ e o WhatsApp em <a href="#/perfil">Meu perfil</a>.'}</div>`
+      : as.status === 'sem_assinatura' ? '<div class="aviso">Cadastro aprovado. Falta ativar a sua assinatura para anunciar. <a href="#/assinatura">Ver detalhes</a></div>'
+      : as.status === 'em_atraso' ? `<div class="aviso alerta">Mensalidade em atraso. Regularize até <strong>${d(as.bloqueio_em)}</strong> para manter os anúncios no ar. <a href="#/assinatura">Ver assinatura</a></div>`
+      : as.status === 'suspensa' || as.status === 'cancelada' ? '<div class="aviso alerta">Assinatura suspensa: seus anúncios estão ocultos. <a href="#/assinatura">Regularizar</a></div>'
+      : as.status === 'teste' ? `<div class="aviso">Período de teste até <strong>${d(as.teste_ate)}</strong>. <a href="#/assinatura">Ver assinatura</a></div>` : '';
     const [v, it] = await Promise.all([
       CF.sb.from('veiculos').select('*').eq('garagem_id', gid).order('criado_em', { ascending: false }),
       CF.sb.from('interesses').select('veiculo_id,status')

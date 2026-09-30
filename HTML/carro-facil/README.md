@@ -28,14 +28,23 @@ Estrutura: `index.html`, `style.css`, `js/` (`core` estado/Supabase, `catalogo`,
 - **Radar de demanda** (`#/radar`): o que os clientes cadastrados buscam e favoritam, agregado (grupos com menos de 3 pessoas ficam ocultos) + referência de mercado (Fenauto/Webmotors).
 - **Push** nos dois sentidos: cliente é avisado quando entra carro parecido com a busca; garagista, quando surge cliente para o estoque dele. No iPhone só funciona com o app na **tela inicial**.
 
+## Assinaturas e pagamentos (painel administrativo)
+Garagem aprovada só anuncia e vê clientes com **assinatura mensal** em dia (ou em teste/cortesia). Os **valores dos planos são definidos por você** em `#/admin/planos` (nada vem pré-definido; os 3 planos iniciais estão com valor 0 e inativos).
+- **Abas do admin** (`#/admin`): Garagens (aprovação) · Assinaturas (receita mensal, recebido, a receber, vencido; criar/alterar/suspender/cancelar) · Cobranças (registrar/desfazer pagamento, cancelar) · Planos (valor, limite de anúncios, créditos/mês) · Ajustes (instruções de pagamento e dias de carência).
+- **Mensalidades recorrentes:** uma rotina diária no banco (pg_cron, 08h de Brasília) gera a cobrança do mês 5 dias antes do vencimento, marca vencidas, coloca a assinatura **em atraso** e, passada a **carência**, **suspende** (anúncios saem do catálogo). Registrar o pagamento reativa e soma os créditos do plano.
+- **Limite de anúncios** por plano (bloqueado no banco), **teste grátis** por dias, **cortesia** e valor especial por garagem. Toda ação do admin fica em `assinatura_log`.
+- O garagista vê a própria situação em `#/assinatura` (plano, próxima cobrança, últimas cobranças e como pagar) e recebe push de nova mensalidade, atraso e suspensão.
+- **Recebimento:** por enquanto o admin confirma o pagamento (Pix/boleto/dinheiro). Cobrança automática em cartão ou débito exige contratar um provedor (Asaas, Mercado Pago, Stripe…); as tabelas já têm `gateway`/`gateway_ref`.
+
 ## Backend (Supabase)
 Projeto `carro-facil` (ref `idqaecjrakbrpatgvczq`, sa-east-1). Chaves públicas em `js/config.js`.
-SQL: `supabase/schema.sql` (login/preferências/despachantes), `002_marketplace.sql` (perfis, garagens, veículos, interesses, fotos) e `003_negocio.sql` (aprovação, consentimento, leads/créditos, radar, push). Função de push: `supabase/functions/notificar` (verify_jwt desligado; autenticada por segredo compartilhado em `config_privada`).
+SQL: `supabase/schema.sql` (login/preferências/despachantes), `002_marketplace.sql` (perfis, garagens, veículos, interesses, fotos), `003_negocio.sql` (aprovação, consentimento, leads/créditos, radar, push) e `004_assinaturas.sql` (planos, assinaturas, cobranças, rotina diária). Função de push: `supabase/functions/notificar` (verify_jwt desligado; autenticada por segredo compartilhado em `config_privada`).
 Tudo com RLS; funções sensíveis (`SECURITY DEFINER`) checam o usuário por dentro. Telefones e créditos nunca ficam em tabelas públicas.
 
 **Dados de exemplo:** 6 garagens e 12 veículos fictícios (`garagens.demo = true`, aprovadas, sem dono). Para remover: `delete from garagens where demo;`.
 
 ### Configuração pendente (manual)
+0. **Mensalidades:** em `#/admin/planos` defina o valor de cada plano e ative os que quiser oferecer; em `#/admin/ajustes` escreva as instruções de pagamento (chave Pix etc.) e a carência. Depois de aprovar uma garagem, crie a assinatura em `#/admin/assinaturas` (teste grátis, cortesia ou cobrança).
 1. **Administrador:** no SQL Editor do Supabase, `insert into public.admin_emails values ('seu-email@dominio.com');` (minúsculas). Só vale para e-mail **confirmado** no login.
 2. **Contato do push:** `update public.config_privada set valor = 'mailto:contato@seu-dominio.com' where chave = 'vapid_subject';`
 3. **Comercial:** em `js/config.js`, `contatoComercial` (WhatsApp `55DDDNUMERO`) para o garagista pedir créditos.

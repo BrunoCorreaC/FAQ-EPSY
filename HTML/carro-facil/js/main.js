@@ -28,7 +28,7 @@
     if (meu !== tok) return; // outra navegação começou
     app.innerHTML = r.html; app.removeAttribute('aria-busy');
     r.bind?.();
-    const ativa = { carro: 'carros', veiculo: 'painel', preferencias: 'voce', favoritos: '', simulador: 'guia', perfil: 'conta', 'nova-senha': 'conta', admin: 'conta' }[chave] ?? chave;
+    const ativa = { carro: 'carros', veiculo: 'painel', preferencias: 'voce', favoritos: '', simulador: 'guia', perfil: 'conta', 'nova-senha': 'conta', admin: 'conta', assinatura: 'conta' }[chave] ?? chave;
     document.getElementById('abas').innerHTML = navItens().map(([h, k, i, t]) =>
       `<a href="${h}" class="${k === ativa ? 'ativa' : ''}" ${k === ativa ? 'aria-current="page"' : ''}><span aria-hidden="true">${CF.ico(i)}</span>${t}</a>`).join('');
     const c = document.getElementById('conta-link'); c.hidden = !CF.sb;

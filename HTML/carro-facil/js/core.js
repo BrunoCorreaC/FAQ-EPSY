@@ -38,7 +38,7 @@
 
   // estado
   const S = CF.s = {
-    user: null, perfil: null, garagem: null, priv: null, admin: false, autoriza: false, autorizadoEm: null,
+    user: null, perfil: null, garagem: null, priv: null, assin: null, admin: false, autoriza: false, autorizadoEm: null,
     favs: CF.store.get('cf_favs', []), checks: CF.store.get('cf_checks', []), busca: CF.store.get('cf_busca', {}),
     veiculos: null, garagens: {}, telG: {}, telD: {}, telsOk: false, enviados: new Set()
   };
@@ -93,6 +93,7 @@
       S.garagem = (await sb.from('garagens').select('*').eq('owner_id', uid).maybeSingle()).data ?? null;
       if (S.garagem) S.priv = (await sb.from('garagem_privado').select('cnpj,creditos').eq('garagem_id', S.garagem.id).maybeSingle()).data ?? null;
     }
+    S.assin = S.garagem ? ((await sb.rpc('minha_assinatura')).data ?? null) : null;
     S.admin = (await sb.rpc('sou_admin')).data === true;
     S.autoriza = pr.data?.autoriza_contato === true; S.autorizadoEm = pr.data?.autorizado_em ?? null;
     S.telG = Object.fromEntries((tg.data ?? []).map(x => [x.garagem_id, x.telefone]));
@@ -114,7 +115,7 @@
     S.user = novo;
     if (novo) { try { await carregaConta(); } catch { /* segue com dados locais */ } }
     else { // não deixa dados de uma conta em aparelho compartilhado
-      Object.assign(S, { perfil: null, garagem: null, priv: null, admin: false, autoriza: false, autorizadoEm: null, telG: {}, telD: {}, telsOk: false, enviados: new Set(), favs: [], checks: [], busca: {} });
+      Object.assign(S, { perfil: null, garagem: null, priv: null, assin: null, admin: false, autoriza: false, autorizadoEm: null, telG: {}, telD: {}, telsOk: false, enviados: new Set(), favs: [], checks: [], busca: {} });
       CF.guardaLocal();
     }
     CF.aoMudar?.();

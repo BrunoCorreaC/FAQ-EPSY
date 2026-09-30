@@ -6,6 +6,7 @@
   const bloqueio = (titulo, texto, ir) => ({ html: `<section class="pagina vazio"><h2>${titulo}</h2><p>${texto}</p>${ir ?? ''}</section>` });
   const ehGaragista = () => CF.papel() === 'garagista' && S.garagem;
   const aprovada = () => S.garagem?.status_aprovacao === 'aprovada';
+  const liberada = () => CF.liberada?.() === true;
   const wa = t => CF.normTel(t) ?? t;
 
   // referência de mercado (estática): fontes públicas citadas na pesquisa
@@ -23,7 +24,7 @@
   // ---------- clientes buscando ----------
   CF.rotas.demanda = async () => {
     if (!ehGaragista()) return bloqueio('Clientes buscando', 'Esta área é para garagistas.', '<a class="btn" href="#/entrar?papel=garagista">Criar conta de garagista</a>');
-    if (!aprovada()) return bloqueio('Cadastro em análise', 'Assim que a sua garagem for aprovada, você verá aqui os clientes que procuram carros parecidos com o seu estoque.', '<a class="btn" href="#/painel">Voltar ao painel</a>');
+    if (!liberada()) return bloqueio(aprovada() ? 'Assinatura pendente' : 'Cadastro em análise', aprovada() ? 'Para ver os clientes que procuram carros parecidos com o seu estoque, mantenha a assinatura em dia.' : 'Assim que a sua garagem for aprovada, você verá aqui os clientes que procuram carros parecidos com o seu estoque.', `<a class="btn" href="${aprovada() ? '#/assinatura' : '#/painel'}">${aprovada() ? 'Ver assinatura' : 'Voltar ao painel'}</a>`);
     const [d, u] = await Promise.all([CF.sb.rpc('demandas_para_mim'), CF.sb.rpc('meus_desbloqueios')]);
     if (d.error) return { html: '<section class="pagina vazio"><p>Não foi possível carregar agora.</p><button class="btn" data-acao="recarrega">Tentar de novo</button></section>' };
     const lista = d.data ?? [], abertos = u.data ?? [];
@@ -60,7 +61,7 @@
 
   // ---------- radar de demanda ----------
   CF.rotas.radar = async () => {
-    if (!(ehGaragista() && aprovada()) && !S.admin) return bloqueio('Radar de demanda', 'Disponível para garagens aprovadas.', '<a class="btn" href="#/painel">Voltar ao painel</a>');
+    if (!(ehGaragista() && liberada()) && !S.admin) return bloqueio('Radar de demanda', 'Disponível para garagens aprovadas e com a assinatura em dia.', '<a class="btn" href="#/painel">Voltar ao painel</a>');
     const r = await CF.sb.rpc('radar_demanda');
     if (r.error) return { html: '<section class="pagina vazio"><p>Não foi possível carregar agora.</p><button class="btn" data-acao="recarrega">Tentar de novo</button></section>' };
     const j = r.data ?? {};
@@ -87,12 +88,13 @@
     const fmt = c => c ? c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : 'sem CNPJ';
     const item = g => `<article class="card adm"><h3>${esc(g.nome)} <span class="tag ${g.status_aprovacao === 'pendente' ? 'novo' : ''}">${ST[g.status_aprovacao]}</span>${g.demo ? ' <span class="tag">Demo</span>' : ''}</h3>
       <p class="meta">${esc(g.cidade)}/${esc(g.uf)} · CNPJ ${esc(fmt(g.cnpj))} · ${g.telefone ? esc(CF.fmtTel(g.telefone)) : 'sem telefone'} · cadastrada em ${data(g.criado_em)}</p>
-      <p class="meta">Créditos: <strong>${g.creditos}</strong></p>
+      <p class="meta">Créditos: <strong>${g.creditos}</strong> · Assinatura: ${g.demo ? 'demonstração' : g.assin_status ? esc(({ teste: 'em teste', ativa: 'ativa', em_atraso: 'em atraso', suspensa: 'suspensa', cancelada: 'cancelada', cortesia: 'cortesia' })[g.assin_status]) + (g.plano_nome ? ' · ' + esc(g.plano_nome) : '') : 'nenhuma'}</p>
+      ${g.status_aprovacao === 'aprovada' && !g.demo && !g.assin_status ? '<p class="aviso-linha">Aprovada, mas sem assinatura: ainda não pode anunciar. <a href="#/admin/assinaturas">Criar assinatura</a></p>' : ''}
       <div class="acoes-linha">${['aprovada', 'pendente', 'suspensa'].filter(s => s !== g.status_aprovacao).map(s => `<button class="btn ${s === 'aprovada' ? '' : 'sec'} peq" data-acao="admStatus" data-id="${g.id}" data-s="${s}">${s === 'aprovada' ? 'Aprovar' : s === 'suspensa' ? 'Suspender' : 'Voltar a pendente'}</button>`).join('')}
         <input class="cred-qtd" type="number" min="-1000" max="1000" step="1" value="10" aria-label="Quantidade de créditos" id="cq-${g.id}">
         <button class="btn sec peq" data-acao="admCred" data-id="${g.id}">Créditos</button></div></article>`;
     const l = r.data ?? [];
-    return { html: `<section class="pagina estreita"><h2>Administração</h2><p class="meta">Aprove garagens, suspenda cadastros e conceda créditos. Créditos positivos somam; negativos descontam.</p>${l.length ? l.map(item).join('') : '<div class="vazio"><p>Nenhuma garagem cadastrada.</p></div>'}</section>` };
+    return { html: `<section class="pagina estreita">${CF.adminAbas?.('') ?? ''}<h2>Garagens</h2><p class="meta">Aprove ou suspenda cadastros e conceda créditos avulsos. Créditos positivos somam; negativos descontam. Depois de aprovar, crie a assinatura na aba Assinaturas.</p>${l.length ? l.map(item).join('') : '<div class="vazio"><p>Nenhuma garagem cadastrada.</p></div>'}</section>` };
   };
   CF.acoes.admStatus = async el => {
     const { error } = await CF.sb.rpc('admin_definir_status', { p_garagem: el.dataset.id, p_status: el.dataset.s });
