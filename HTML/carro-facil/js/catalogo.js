@@ -62,7 +62,7 @@
       <a class="foto" href="#/carro/${v.id}" aria-label="${esc(v.marca + ' ' + v.modelo)}">${foto(v)}
         ${novo ? '<span class="selo">Novo</span>' : ''}
         ${pct != null ? `<span class="match ${pct >= 90 ? 'alto' : ''}">${pct}% combina</span>` : ''}</a>
-      <button class="fav ${fav ? 'on' : ''}" data-acao="fav" data-id="${v.id}" aria-label="Favoritar" aria-pressed="${fav}">♥</button>
+      <button class="fav ${fav ? 'on' : ''}" data-acao="fav" data-id="${v.id}" aria-label="Favoritar" aria-pressed="${fav}">${CF.ico('heart')}</button>
       <div class="corpo">
         <p class="preco">${brl(v.preco)}</p>
         <h3><a href="#/carro/${v.id}">${esc(v.marca)} ${esc(v.modelo)}</a></h3>
@@ -294,7 +294,7 @@
       html: `<section class="pagina detalhe"><a class="voltar" href="#/">← Carros</a>
         <div class="galeria">${fotos.length ? fotos.map(u => `<img src="${esc(u)}" alt="" loading="lazy">`).join('') : `<div class="ph grande" style="--c:${COR[v.cor] ?? '#cfd8d4'}">${CARRO_SVG}<span>Foto em breve</span></div>`}</div>
         <div class="cab"><div><p class="preco grande">${brl(v.preco)}</p><h1>${esc(v.marca)} ${esc(v.modelo)}</h1></div>
-          <button class="fav em-linha ${fav ? 'on' : ''}" data-acao="fav" data-id="${v.id}" aria-label="Favoritar" aria-pressed="${fav}">♥</button></div>
+          <button class="fav em-linha ${fav ? 'on' : ''}" data-acao="fav" data-id="${v.id}" aria-label="Favoritar" aria-pressed="${fav}">${CF.ico('heart')}</button></div>
         ${pct != null ? `<p class="match-linha">Combina ${pct}% com o que você procura</p>` : ''}
         <dl class="specs">${spec('Ano', v.ano)}${spec('Km', num(v.km))}${spec('Câmbio', v.cambio)}${spec('Combustível', v.combustivel)}${spec('Tipo', v.tipo)}${spec('Cor', v.cor || '—')}</dl>
         ${v.descricao ? `<p class="descricao">${esc(v.descricao)}</p>` : ''}

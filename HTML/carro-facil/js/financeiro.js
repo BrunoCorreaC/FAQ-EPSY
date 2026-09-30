@@ -44,7 +44,7 @@
       return `<article class="card adm"><h3>${esc(a.garagem_nome)} ${tag(STATUS_ASSIN[a.status], ruim)}</h3>
         <p class="meta">${esc(a.plano_nome)} · ${reais(a.valor_centavos)}/mês · vence dia ${a.dia_vencimento}</p>
         <p class="meta">${a.status === 'teste' ? `Teste até ${dia(a.teste_ate)} · ` : ''}Próxima cobrança: ${dia(a.proxima_cobranca)}${a.bloqueio_em ? ` · bloqueio em ${dia(a.bloqueio_em)}` : ''}${a.cortesia_ate ? ` · cortesia até ${dia(a.cortesia_ate)}` : ''}</p>
-        ${a.vencidas > 0 ? `<p class="aviso-linha">${a.vencidas} cobrança(s) vencida(s): ${reais(a.devido_centavos)}</p>` : ''}
+        ${a.vencidas > 0 ? `<p class="aviso-linha">${CF.ico('info', 'peq')} ${a.vencidas} cobrança(s) vencida(s): ${reais(a.devido_centavos)}</p>` : ''}
         <div class="acoes-linha">
           ${a.status === 'suspensa' || a.status === 'cancelada' || a.status === 'cortesia' ? `<button class="btn peq" data-acao="assinStatus" data-id="${a.garagem_id}" data-s="ativa">Reativar</button>` : ''}
           ${a.status === 'ativa' || a.status === 'em_atraso' || a.status === 'teste' ? `<button class="btn sec peq" data-acao="assinStatus" data-id="${a.garagem_id}" data-s="suspensa">Suspender</button>` : ''}
@@ -190,7 +190,7 @@
     const abertas = (a.cobrancas ?? []).some(c => c.status === 'aberta' || c.status === 'vencida');
     return { html: `<section class="pagina estreita"><h2>Assinatura</h2>
       <div class="card"><div class="cab"><div><h3>${esc(a.plano.nome)}</h3><p class="preco">${reais(a.valor_centavos)}<small>/mês</small></p></div>${tag(STATUS_ASSIN[a.status], ruimAssin(a.status))}</div>
-        <p class="${ruimAssin(a.status) ? 'aviso-linha' : ''}">${msgs[a.status] ?? ''}</p>
+        <p class="${ruimAssin(a.status) ? 'aviso-linha' : ''}">${ruimAssin(a.status) ? CF.ico('info', 'peq') + ' ' : ''}${msgs[a.status] ?? ''}</p>
         <p class="meta">${a.plano.max_anuncios ? `Até ${a.plano.max_anuncios} anúncios ativos` : 'Anúncios ilimitados'} · ${a.plano.creditos_mensais} crédito(s) de contato por mês · vencimento todo dia ${a.dia_vencimento}</p>${a.plano.descricao ? `<p class="meta">${esc(a.plano.descricao)}</p>` : ''}</div>
       ${abertas || a.instrucoes ? `<div class="card"><h3>Como pagar</h3>${a.instrucoes ? `<p class="instr">${esc(a.instrucoes)}</p>` : '<p class="meta">Fale com a equipe para receber os dados de pagamento.</p>'}<p class="meta">Depois de pagar, envie o comprovante para a equipe. A liberação é feita após a confirmação.</p>${zap}</div>` : ''}
       <h3>Últimas cobranças</h3>${(a.cobrancas ?? []).length ? `<ul class="cobrancas">${a.cobrancas.map(cob).join('')}</ul>` : '<div class="vazio"><p>Ainda não há cobranças.</p></div>'}</section>` };
