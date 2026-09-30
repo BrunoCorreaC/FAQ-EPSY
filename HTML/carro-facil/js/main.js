@@ -6,7 +6,7 @@
 
   const navItens = () => {
     const g = CF.papel() === 'garagista';
-    if (g) return [['#/', 'carros', 'car', 'Carros'], ['#/painel', 'painel', 'store', 'Meus veículos'], ['#/interessados', 'interessados', 'chat', 'Interessados'], ['#/conta', 'conta', 'user', 'Conta']];
+    if (g) return [['#/painel', 'painel', 'store', 'Veículos'], ['#/demanda', 'demanda', 'spark', 'Clientes'], ['#/interessados', 'interessados', 'chat', 'Interessados'], ['#/radar', 'radar', 'chart', 'Radar'], ['#/conta', 'conta', 'user', 'Conta']];
     return [['#/', 'carros', 'car', 'Carros'], ['#/voce', 'voce', 'spark', 'Para você'], ['#/despachantes', 'despachantes', 'phone', 'Despachantes'], ['#/guia', 'guia', 'guide', 'Guia'],
       S.user ? ['#/conta', 'conta', 'user', 'Conta'] : ['#/entrar', 'entrar', 'user', 'Entrar']];
   };
@@ -28,7 +28,7 @@
     if (meu !== tok) return; // outra navegação começou
     app.innerHTML = r.html; app.removeAttribute('aria-busy');
     r.bind?.();
-    const ativa = { carro: 'carros', veiculo: 'painel', preferencias: 'voce', favoritos: '', simulador: 'guia', perfil: 'conta', 'nova-senha': 'conta' }[chave] ?? chave;
+    const ativa = { carro: 'carros', veiculo: 'painel', preferencias: 'voce', favoritos: '', simulador: 'guia', perfil: 'conta', 'nova-senha': 'conta', admin: 'conta' }[chave] ?? chave;
     document.getElementById('abas').innerHTML = navItens().map(([h, k, i, t]) =>
       `<a href="${h}" class="${k === ativa ? 'ativa' : ''}" ${k === ativa ? 'aria-current="page"' : ''}><span aria-hidden="true">${CF.ico(i)}</span>${t}</a>`).join('');
     const c = document.getElementById('conta-link'); c.hidden = !CF.sb;

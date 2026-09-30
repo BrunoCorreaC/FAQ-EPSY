@@ -16,6 +16,7 @@
     user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
     store: '<path d="M3 9l1.500-5h15L21 9M3 9v11h18V9M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M10 20v-5h4v5"/>',
     chat: '<path d="M21 12a8 8 0 0 1-11.500 7.200L4 20l1-4.500A8 8 0 1 1 21 12z"/>',
+    chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
     pin: '<path d="M12 21s7-6.200 7-11.500A7 7 0 0 0 5 9.500C5 14.800 12 21 12 21z"/><circle cx="12" cy="9.500" r="2.500"/>',
     lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
     check: '<path d="M5 12.500l4.500 4.500L19 7.500"/>',
@@ -31,13 +32,13 @@
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage bloqueado */ } }
   };
 
-  const cfg = window.CF_CONFIG || {};
+  const cfg = CF.cfg = window.CF_CONFIG || {};
   const sb = CF.sb = (window.supabase && cfg.supabaseUrl && cfg.supabaseKey)
     ? window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, { auth: { flowType: 'pkce' } }) : null;
 
   // estado
   const S = CF.s = {
-    user: null, perfil: null, garagem: null,
+    user: null, perfil: null, garagem: null, priv: null, admin: false, autoriza: false, autorizadoEm: null,
     favs: CF.store.get('cf_favs', []), checks: CF.store.get('cf_checks', []), busca: CF.store.get('cf_busca', {}),
     veiculos: null, garagens: {}, telG: {}, telD: {}, telsOk: false, enviados: new Set()
   };
@@ -58,7 +59,8 @@
   CF.salvaPrefs = async () => {
     CF.guardaLocal();
     if (!sb || !S.user) return;
-    await sb.from('preferencias').upsert({ user_id: S.user.id, favoritos: S.favs, passos: S.checks, busca: S.busca, atualizado_em: new Date().toISOString() });
+    await sb.from('preferencias').upsert({ user_id: S.user.id, favoritos: S.favs, passos: S.checks, busca: S.busca,
+      autoriza_contato: S.autoriza, autorizado_em: S.autoriza ? (S.autorizadoEm ?? (S.autorizadoEm = new Date().toISOString())) : null, atualizado_em: new Date().toISOString() });
   };
 
   // catálogo público (veículos ativos + garagens)
@@ -79,14 +81,20 @@
     const uid = S.user.id;
     const [p, pr, tg, td, it] = await Promise.all([
       sb.from('perfis').select('*').eq('id', uid).maybeSingle(),
-      sb.from('preferencias').select('favoritos,passos,busca').eq('user_id', uid).maybeSingle(),
+      sb.from('preferencias').select('favoritos,passos,busca,autoriza_contato,autorizado_em').eq('user_id', uid).maybeSingle(),
       sb.from('garagem_contatos').select('garagem_id,telefone'),
       sb.from('contatos').select('chave,telefone'),
       sb.from('interesses').select('veiculo_id').eq('comprador_id', uid)
     ]);
     S.perfil = p.data ?? null;
     S.garagem = null;
-    if (S.perfil?.papel === 'garagista') S.garagem = (await sb.from('garagens').select('*').eq('owner_id', uid).maybeSingle()).data ?? null;
+    S.priv = null;
+    if (S.perfil?.papel === 'garagista') {
+      S.garagem = (await sb.from('garagens').select('*').eq('owner_id', uid).maybeSingle()).data ?? null;
+      if (S.garagem) S.priv = (await sb.from('garagem_privado').select('cnpj,creditos').eq('garagem_id', S.garagem.id).maybeSingle()).data ?? null;
+    }
+    S.admin = (await sb.rpc('sou_admin')).data === true;
+    S.autoriza = pr.data?.autoriza_contato === true; S.autorizadoEm = pr.data?.autorizado_em ?? null;
     S.telG = Object.fromEntries((tg.data ?? []).map(x => [x.garagem_id, x.telefone]));
     S.telD = Object.fromEntries((td.data ?? []).map(x => [x.chave, x.telefone])); S.telsOk = true;
     S.enviados = new Set((it.data ?? []).map(x => x.veiculo_id));
@@ -96,6 +104,7 @@
     const bd = pr.data?.busca ?? {};
     S.busca = Object.keys(bd).length ? bd : S.busca;
     await CF.salvaPrefs();
+    CF.push?.sincroniza().catch(() => {});
   };
   CF.recarregaConta = carregaConta;
 
@@ -105,7 +114,7 @@
     S.user = novo;
     if (novo) { try { await carregaConta(); } catch { /* segue com dados locais */ } }
     else { // não deixa dados de uma conta em aparelho compartilhado
-      Object.assign(S, { perfil: null, garagem: null, telG: {}, telD: {}, telsOk: false, enviados: new Set(), favs: [], checks: [], busca: {} });
+      Object.assign(S, { perfil: null, garagem: null, priv: null, admin: false, autoriza: false, autorizadoEm: null, telG: {}, telD: {}, telsOk: false, enviados: new Set(), favs: [], checks: [], busca: {} });
       CF.guardaLocal();
     }
     CF.aoMudar?.();
