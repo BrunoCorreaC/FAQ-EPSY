@@ -1,4 +1,4 @@
-// Catálogo do comprador: busca, filtros, match com preferências, detalhe do veículo, favoritos
+// Catálogo do cliente: busca, filtros, match com preferências, detalhe do veículo, favoritos
 (() => {
   const { esc, brl, num, s: S } = CF;
   const F = CF.F = { ordem: 'recentes' }; // filtros ativos da busca (só em memória)
@@ -56,15 +56,18 @@
 
   const card = (v, pct) => {
     const g = S.garagens[v.garagem_id]; const fav = S.favs.includes(v.id);
+    const novo = Date.now() - new Date(v.criado_em) < 7 * 864e5;
     return `<article class="card veic">
       <a class="foto" href="#/carro/${v.id}" aria-label="${esc(v.marca + ' ' + v.modelo)}">${foto(v)}
+        ${novo ? '<span class="selo">Novo</span>' : ''}
         ${pct != null ? `<span class="match ${pct >= 90 ? 'alto' : ''}">${pct}% combina</span>` : ''}</a>
       <button class="fav ${fav ? 'on' : ''}" data-acao="fav" data-id="${v.id}" aria-label="Favoritar" aria-pressed="${fav}">♥</button>
       <div class="corpo">
         <p class="preco">${brl(v.preco)}</p>
         <h3><a href="#/carro/${v.id}">${esc(v.marca)} ${esc(v.modelo)}</a></h3>
         <p class="meta">${v.ano} · ${num(v.km)} km · ${esc(v.cambio)}</p>
-        <p class="meta local">📍 ${esc(v.cidade)}/${esc(v.uf)}${g ? ` · ${esc(g.nome)}` : ''}</p>
+        <p class="meta local">📍 ${esc(v.cidade)}/${esc(v.uf)}</p>
+        ${g ? `<p class="garagem-lin"><span class="avatar" aria-hidden="true">${esc((g.nome || '?')[0].toUpperCase())}</span>${esc(g.nome)}</p>` : ''}
       </div></article>`;
   };
   CF.cardCarro = card;
@@ -144,6 +147,7 @@
     if (F[k] === r.f[k]) delete F[k]; else Object.assign(F, r.f);
     CF.render();
   };
+  CF.acoes.tipoCat = el => { if (F.tipo === el.dataset.t) delete F.tipo; else F.tipo = el.dataset.t; CF.render(); };
   CF.acoes.salvaBuscaAtual = async () => {
     if (!S.user) { CF.toast('Entre para salvar sua busca.'); location.hash = '#/entrar'; return; }
     const { q, ...resto } = limpa(F); S.busca = resto; await CF.salvaPrefs();
@@ -167,9 +171,20 @@
     try { await CF.carregaCatalogo(); } catch { return { html: `<section class="pagina">${erroCarga()}</section>` }; }
     const bc = S.busca && Object.keys(S.busca).length;
     const ativos = Object.entries(limpa(F));
+    const V = S.veiculos, mostraHero = !ativos.length && CF.papel() !== 'garagista';
+    const cont = {}; V.forEach(v => { cont[v.tipo] = (cont[v.tipo] || 0) + 1; });
+    const hero = mostraHero ? `
+      <section class="hero"><div class="hero-in">
+        <p class="eyebrow">Compra sem complicação</p>
+        <h1>Cadê meu carro?<br><span>Encontre o seu.</span></h1>
+        <p class="hero-sub">Filtre por região, modelo, ano e valor e fale direto com a garagem.</p>
+        <div class="hero-stats"><span><strong>${V.length}</strong> carros</span><span><strong>${new Set(V.map(v => v.garagem_id)).size}</strong> garagens</span><span><strong>${new Set(V.map(v => v.cidade)).size}</strong> cidades</span></div>
+      </div></section>` : '';
+    const cats = `<div class="cats" role="group" aria-label="Categorias">${TIPOS.filter(t => cont[t]).map(t =>
+      `<button class="cat ${F.tipo === t ? 'on' : ''}" data-acao="tipoCat" data-t="${t}"><strong>${t}</strong><span>${cont[t]} carro${cont[t] === 1 ? '' : 's'}</span></button>`).join('')}</div>`;
     const nFiltros = ativos.filter(([k]) => k !== 'q').length;
     return {
-      html: `
+      html: `${hero}
       <section class="busca-topo">
         <div class="busca-linha">
           <input type="search" id="q" placeholder="Buscar marca ou modelo" value="${esc(F.q ?? '')}" aria-label="Buscar" autocomplete="off">
@@ -179,12 +194,13 @@
           ${RAPIDOS.map((r, i) => { const [k] = Object.keys(r.f); return `<button class="chip ${F[k] === r.f[k] ? 'on' : ''}" data-acao="rapido" data-i="${i}">${r.t}</button>`; }).join('')}
         </div></section>
       <section class="pagina">
+        ${mostraHero || F.tipo ? cats : ''}
         ${ativos.filter(([k]) => k !== 'q').length ? `<div class="chips ativos">${ativos.filter(([k]) => k !== 'q').map(([k, v]) => `<button class="chip on" data-acao="removeFiltro" data-k="${k}" aria-label="Remover filtro ${esc(ROTULOS[k](v))}">${esc(ROTULOS[k](v))} ✕</button>`).join('')}
           <button class="chip salvar" data-acao="salvaBuscaAtual">★ Salvar como minha busca</button></div>` : ''}
         <div class="linha-res"><p class="meta" id="contagem" role="status"></p>
           <label class="ordem">Ordenar <select id="ordem">${Object.entries(ORDENS).map(([k, t]) => `<option value="${k}" ${F.ordem === k ? 'selected' : ''}>${t}</option>`).join('')}</select></label></div>
         <div class="grade" id="lista"></div>
-        ${S.perfil?.papel !== 'garagista' && !S.user ? `<a class="faixa" href="#/entrar?papel=garagista"><strong>É garagista?</strong> Anuncie seus carros e receba compradores interessados →</a>` : ''}
+        ${S.perfil?.papel !== 'garagista' && !S.user ? `<a class="faixa" href="#/entrar?papel=garagista"><strong>É garagista?</strong> Anuncie seus carros e receba clientes interessados →</a>` : ''}
       </section>`,
       bind() {
         const pinta = () => {
@@ -202,7 +218,7 @@
 
   CF.rotas.voce = async () => {
     if (!S.user) return { html: `<section class="pagina vazio"><h2>Carros que combinam com você</h2><p>Entre e conte o que procura. Mostramos primeiro os carros que mais combinam.</p><a class="btn grande" href="#/entrar">Entrar ou criar conta</a></section>` };
-    if (CF.papel() === 'garagista') return { html: '<section class="pagina vazio"><p>Esta área é para compradores.</p><a class="btn" href="#/painel">Ir para meus veículos</a></section>' };
+    if (CF.papel() === 'garagista') return { html: '<section class="pagina vazio"><p>Esta área é para clientes.</p><a class="btn" href="#/painel">Ir para meus veículos</a></section>' };
     try { await CF.carregaCatalogo(); } catch { return { html: `<section class="pagina">${erroCarga()}</section>` }; }
     const b = S.busca ?? {};
     if (!Object.keys(b).length) return { html: `<section class="pagina vazio"><h2>Conte o que você procura</h2><p>Defina região, modelo, ano e valor. Depois é só voltar aqui para ver os melhores resultados.</p><a class="btn grande" href="#/preferencias">Definir preferências</a></section>` };

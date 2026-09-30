@@ -1,8 +1,8 @@
 # Cadê meu carro?
 
-Marketplace mobile-first (PWA) que conecta **compradores** e **garagistas**, com foco em quem busca o primeiro carro.
+Marketplace mobile-first (PWA) que conecta **clientes** e **garagistas**, com foco em quem busca o primeiro carro.
 
-## Comprador
+## Cliente
 - Catálogo com fotos, busca e **filtros**: região (estado/cidade), marca, modelo, ano, valor, km, câmbio, combustível, tipo e **garagista**; ordenação por preço, km, ano.
 - **Preferências salvas** ("Para você"): carros ranqueados por % de combinação com o que a pessoa procura.
 - **"Tenho interesse"**: o garagista recebe nome, WhatsApp e mensagem (só nesse momento).
@@ -11,7 +11,7 @@ Marketplace mobile-first (PWA) que conecta **compradores** e **garagistas**, com
 
 ## Garagista
 - Cadastro de perfil e da garagem; **cadastro/edição de veículos** com até 6 fotos (compressão no aparelho), status ativo/pausado/vendido.
-- Painel: anúncios, **interessados** (com WhatsApp e "marcar atendido") e **buscas compatíveis** (quantos compradores têm preferências que combinam com cada veículo, sem identificá-los).
+- Painel: anúncios, **interessados** (com WhatsApp e "marcar atendido") e **buscas compatíveis** (quantos clientes têm preferências que combinam com cada veículo, sem identificá-los).
 
 ## Rodar
 
@@ -21,7 +21,7 @@ Estrutura: `index.html`, `style.css`, `js/` (`core` estado/Supabase, `catalogo`,
 
 ## Backend (Supabase)
 Projeto `carro-facil` (ref `idqaecjrakbrpatgvczq`, sa-east-1). Chaves públicas em `js/config.js`. SQL em `supabase/schema.sql` (login/preferências/contatos de despachantes) e `supabase/002_marketplace.sql` (perfis, garagens, veículos, interesses, match, fotos).
-Tudo protegido por RLS: veículos ativos e garagens são públicos; telefones só para logados; interesses só para o comprador e o dono do veículo; fotos só gravadas pelo dono da garagem (bucket `veiculos`).
+Tudo protegido por RLS: veículos ativos e garagens são públicos; telefones só para logados; interesses só para o cliente e o dono do veículo; fotos só gravadas pelo dono da garagem (bucket `veiculos`).
 
 **Dados de exemplo:** 6 garagens e 12 veículos fictícios (`garagens.demo = true`, sem dono). Para remover: `delete from garagens where demo;` (os veículos saem junto).
 
