@@ -20,3 +20,18 @@ Telefones: formato internacional, só dígitos (ex.: `5548999999999`).
 ## Próximos passos sugeridos
 
 Fotos reais dos carros, backend (ex.: Supabase) para cadastro por lojas/despachantes, mapa, avaliações.
+
+## Login do comprador (Supabase)
+
+E-mail/senha e Google. Login libera: contatos (WhatsApp/telefone) de vendedores e despachantes, e salva favoritos e progresso do guia na conta (tabela `preferencias`, com RLS em `supabase/schema.sql`).
+Projeto Supabase: `carro-facil` (ref `idqaecjrakbrpatgvczq`, região sa-east-1). Chaves públicas em `js/config.js`.
+Sem a config ou sem a biblioteca, o app funciona normalmente, sem conta.
+
+Os telefones ficam na tabela `contatos` do Supabase (RLS: só usuários logados leem), não no código do app. Para trocar os números de exemplo pelos reais, edite a tabela no painel do Supabase (Table Editor → `contatos`; chave `c<id>` = vendedor do carro, `d<id>` = despachante).
+Sem login (ou sem Supabase configurado) o app não mostra nenhum telefone.
+
+### Configuração pendente (manual)
+1. **Google Cloud Console** → APIs e serviços → Credenciais → criar *ID do cliente OAuth* (tipo Web). Em "URIs de redirecionamento autorizados": `https://idqaecjrakbrpatgvczq.supabase.co/auth/v1/callback`.
+2. **Supabase** → Authentication → Providers → Google: ativar e colar Client ID e Client Secret.
+3. **Supabase** → Authentication → URL Configuration: definir *Site URL* e adicionar em *Redirect URLs* o endereço onde o app for publicado.
+4. E-mail de confirmação: o remetente padrão do Supabase tem limite baixo de envios; para uso real configure um SMTP próprio (Authentication → SMTP).

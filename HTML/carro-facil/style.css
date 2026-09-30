@@ -50,3 +50,9 @@ input[type=range] { padding: 0; accent-color: var(--verde); } input[type=checkbo
 .abas a span { font-size: 1.3rem; line-height: 1; } .abas a.ativa { color: var(--verde); font-weight: 700; }
 @media (prefers-color-scheme: dark) { .abas a.ativa { color: #6fd6ae; } }
 :focus-visible { outline: 3px solid #f0a020; outline-offset: 2px; }
+.topo-dir { display: flex; align-items: center; }
+.btn-link { display: block; margin: 8px 0; min-height: 44px; padding: 8px 0; border: 0; background: none; color: var(--verde); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
+@media (prefers-color-scheme: dark) { .btn-link { color: #6fd6ae; } }
+.ou { text-align: center; margin: 12px 0; }
+[hidden] { display: none !important; }
+code { background: var(--card); border: 1px solid var(--borda); border-radius: 4px; padding: 0 4px; }
