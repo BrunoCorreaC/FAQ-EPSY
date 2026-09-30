@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b6b4f">
+  <meta name="description" content="Encontre seu primeiro carro, fale com despachantes perto de você e aprenda o passo a passo da compra.">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="stylesheet" href="style.css">
+  <title>Carro Fácil | Seu primeiro carro</title>
+</head>
+<body>
+  <header class="topo">
+    <a class="marca" href="#/" aria-label="Carro Fácil - início">
+      <img src="icon.svg" alt="" width="32" height="32"> Carro Fácil
+    </a>
+    <a class="fav-link" href="#/favoritos" aria-label="Favoritos">♥ <span id="fav-count">0</span></a>
+  </header>
+
+  <main id="app" tabindex="-1"></main>
+
+  <nav class="abas" aria-label="Navegação principal">
+    <a href="#/" data-tab="home"><span>🏠</span>Início</a>
+    <a href="#/carros" data-tab="carros"><span>🚗</span>Carros</a>
+    <a href="#/despachantes" data-tab="despachantes"><span>📞</span>Despachantes</a>
+    <a href="#/guia" data-tab="guia"><span>📋</span>Guia</a>
+    <a href="#/simulador" data-tab="simulador"><span>🧮</span>Simulador</a>
+  </nav>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

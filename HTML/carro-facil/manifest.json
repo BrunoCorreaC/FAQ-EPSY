@@ -1,0 +1,12 @@
+{
+  "name": "Carro Fácil",
+  "short_name": "Carro Fácil",
+  "description": "Catálogo de carros, despachantes próximos e guia para o primeiro carro.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f7f5",
+  "theme_color": "#0b6b4f",
+  "lang": "pt-BR",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
