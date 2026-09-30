@@ -13,8 +13,11 @@
     if (S.user) return { html: '<section class="pagina vazio"><p>Você já está conectado.</p><a class="btn" href="#/conta">Ir para a conta</a></section>' };
     if (params.get('papel') === 'garagista') CF.store.set('cf_papel_hint', 'garagista');
     return {
-      html: `<section class="pagina estreita"><h2 id="a-titulo">Entrar</h2>
-        <p class="meta">Clientes veem contatos e salvam buscas e favoritos. Garagistas anunciam veículos e recebem interessados.</p>
+      html: `<section class="auth">
+        <aside class="auth-marca"><p class="eyebrow">Cadê meu carro?</p><h1>Entre e ache o seu carro mais rápido</h1>
+          <ul class="beneficios"><li>${CF.ico('check', 'peq')} Veja o contato direto das garagens</li><li>${CF.ico('check', 'peq')} Salve buscas e favoritos na sua conta</li><li>${CF.ico('check', 'peq')} Receba primeiro os carros que mais combinam</li></ul>
+          <p class="auth-g"><strong>É garagista?</strong> Crie sua conta e escolha “Garagista” no perfil para anunciar seus carros e receber clientes interessados.</p></aside>
+        <div class="auth-form"><h2 id="a-titulo">Entrar</h2>
         <button class="btn grande sec" id="a-google" type="button">Continuar com Google</button>
         <p class="meta ou">ou use e-mail e senha</p>
         <form class="form" id="a-form">
@@ -23,7 +26,7 @@
           <button class="btn grande" id="a-ok" type="submit">Entrar</button></form>
         <button class="btn-link" id="a-troca" type="button">Não tem conta? Criar conta</button>
         <button class="btn-link" id="a-esqueci" type="button">Esqueci a senha</button>
-        <p class="meta" id="a-msg" role="status"></p></section>`,
+        <p class="meta" id="a-msg" role="status"></p></div></section>`,
       bind() {
         const msg = t => { $('a-msg').textContent = t; };
         const volta = () => location.origin + location.pathname;
@@ -133,7 +136,7 @@
       html: `<section class="pagina estreita"><h2>Minha conta</h2>
         <div class="card"><p><strong>${esc(p?.nome ?? S.user.email ?? '')}</strong> <span class="tag">${p ? (g ? 'Garagista' : 'Cliente') : 'Perfil incompleto'}</span></p>
           <p class="meta">${esc(S.user.email ?? '')}${p ? ` · ${esc(CF.fmtTel(p.telefone))}` : ''}</p>
-          ${g && S.garagem ? `<p class="meta">🏪 ${esc(S.garagem.nome)} · ${esc(S.garagem.cidade)}/${esc(S.garagem.uf)}</p>` : ''}
+          ${g && S.garagem ? `<p class="meta">${CF.ico('store', 'peq')} ${esc(S.garagem.nome)} · ${esc(S.garagem.cidade)}/${esc(S.garagem.uf)}</p>` : ''}
           ${!g ? `<p class="meta">${S.favs.length} favorito(s) · ${S.checks.length} de ${PASSOS.length} passos do guia</p>` : ''}</div>
         <div class="lista-links"><a class="btn sec" href="#/perfil">${p ? 'Editar perfil' : 'Completar perfil'}</a>
           ${g ? '<a class="btn sec" href="#/painel">Meus veículos</a><a class="btn sec" href="#/interessados">Interessados</a>' : '<a class="btn sec" href="#/preferencias">Minhas preferências</a><a class="btn sec" href="#/favoritos">Favoritos</a>'}
@@ -162,13 +165,13 @@
       return `<article class="card veic horiz">
         <a class="foto" href="#/carro/${x.id}">${CF.fotoHtml(x)}</a>
         <div class="corpo"><p class="preco">${brl(x.preco)}</p><h3>${esc(x.marca)} ${esc(x.modelo)} <span class="meta">${x.ano}</span></h3>
-          <p class="meta">👀 ${matches[i]} cliente${matches[i] === 1 ? '' : 's'} buscando algo assim · 💬 ${li.t} interessado${li.t === 1 ? '' : 's'}${li.n ? ` (<strong>${li.n} novo${li.n === 1 ? '' : 's'}</strong>)` : ''}</p>
+          <p class="meta">${matches[i]} cliente${matches[i] === 1 ? '' : 's'} buscando algo assim · ${li.t} interessado${li.t === 1 ? '' : 's'}${li.n ? ` (<strong>${li.n} novo${li.n === 1 ? '' : 's'}</strong>)` : ''}</p>
           <div class="acoes-linha"><select data-status="${x.id}" aria-label="Status">${['ativo', 'pausado', 'vendido'].map(s => `<option value="${s}" ${x.status === s ? 'selected' : ''}>${s[0].toUpperCase() + s.slice(1)}</option>`).join('')}</select>
             <a class="btn sec peq" href="#/veiculo/${x.id}/editar">Editar</a>
             <button class="btn-link peq" data-acao="apaga" data-id="${x.id}">Excluir</button></div></div></article>`;
     };
     return {
-      html: `<section class="pagina"><div class="boas"><div><p class="eyebrow">Painel do garagista</p><h2>${esc(S.garagem.nome)}</h2><p>📍 ${esc(S.garagem.cidade)}/${esc(S.garagem.uf)}</p></div>
+      html: `<section class="pagina"><div class="boas"><div><p class="eyebrow">Painel do garagista</p><h2>${esc(S.garagem.nome)}</h2><p>${CF.ico('pin', 'peq')} ${esc(S.garagem.cidade)}/${esc(S.garagem.uf)}</p></div>
           <a class="btn claro" href="#/veiculo/novo">+ Anunciar veículo</a></div>
         <div class="kpis"><div><strong>${ativos}</strong><span>anúncios ativos</span></div><a href="#/interessados"><strong>${novos}</strong><span>interessados novos</span></a><div><strong>${buscando}</strong><span>buscas compatíveis</span></div></div>
         ${lista.length ? `<div class="grade">${lista.map(item).join('')}</div>` : '<div class="vazio"><p>Você ainda não anunciou nenhum veículo.</p><a class="btn grande" href="#/veiculo/novo">Cadastrar o primeiro</a></div>'}
