@@ -19,14 +19,37 @@ Marketplace mobile-first (PWA) que conecta **clientes** e **garagistas**, com fo
 
 Estrutura: `index.html`, `style.css`, `js/` (`core` estado/Supabase, `catalogo`, `garagem`, `extras`, `main` roteador), `supabase/` (SQL).
 
-## Backend (Supabase)
-Projeto `carro-facil` (ref `idqaecjrakbrpatgvczq`, sa-east-1). Chaves públicas em `js/config.js`. SQL em `supabase/schema.sql` (login/preferências/contatos de despachantes) e `supabase/002_marketplace.sql` (perfis, garagens, veículos, interesses, match, fotos).
-Tudo protegido por RLS: veículos ativos e garagens são públicos; telefones só para logados; interesses só para o cliente e o dono do veículo; fotos só gravadas pelo dono da garagem (bucket `veiculos`).
+## Modelo de negócio (demanda x oferta)
+- **Clientes** dizem o que procuram (busca salva) e, se **autorizarem** (LGPD, opt-in explícito e reversível), aparecem para garagens aprovadas.
+- **Garagistas** só anunciam e veem clientes depois de **aprovados** (CNPJ + análise no painel `#/admin`).
+- **Clientes buscando** (`#/demanda`): a garagem vê buscas compatíveis com o próprio estoque **sem dados pessoais**; para ver nome e WhatsApp, gasta **1 crédito** (idempotente: reabrir o mesmo cliente não cobra de novo; se o cliente retirar o consentimento, o contato some).
+- "Tenho interesse" (o cliente escolhe uma garagem) continua gratuito para a garagem: é lead quente.
+- **Créditos** são concedidos pelo admin (piloto com cobrança manual: Pix/boleto fora do app). Integração de pagamento fica para depois de validar o preço.
+- **Radar de demanda** (`#/radar`): o que os clientes cadastrados buscam e favoritam, agregado (grupos com menos de 3 pessoas ficam ocultos) + referência de mercado (Fenauto/Webmotors).
+- **Push** nos dois sentidos: cliente é avisado quando entra carro parecido com a busca; garagista, quando surge cliente para o estoque dele. No iPhone só funciona com o app na **tela inicial**.
 
-**Dados de exemplo:** 6 garagens e 12 veículos fictícios (`garagens.demo = true`, sem dono). Para remover: `delete from garagens where demo;` (os veículos saem junto).
+## Assinaturas e pagamentos (painel administrativo)
+Garagem aprovada só anuncia e vê clientes com **assinatura mensal** em dia (ou em teste/cortesia). Os **valores dos planos são definidos por você** em `#/admin/planos` (nada vem pré-definido; os 3 planos iniciais estão com valor 0 e inativos).
+- **Abas do admin** (`#/admin`): Garagens (aprovação) · Assinaturas (receita mensal, recebido, a receber, vencido; criar/alterar/suspender/cancelar) · Cobranças (registrar/desfazer pagamento, cancelar) · Planos (valor, limite de anúncios, créditos/mês) · Ajustes (instruções de pagamento e dias de carência).
+- **Mensalidades recorrentes:** uma rotina diária no banco (pg_cron, 08h de Brasília) gera a cobrança do mês 5 dias antes do vencimento, marca vencidas, coloca a assinatura **em atraso** e, passada a **carência**, **suspende** (anúncios saem do catálogo). Registrar o pagamento reativa e soma os créditos do plano.
+- **Limite de anúncios** por plano (bloqueado no banco), **teste grátis** por dias, **cortesia** e valor especial por garagem. Toda ação do admin fica em `assinatura_log`.
+- O garagista vê a própria situação em `#/assinatura` (plano, próxima cobrança, últimas cobranças e como pagar) e recebe push de nova mensalidade, atraso e suspensão.
+- **Recebimento:** por enquanto o admin confirma o pagamento (Pix/boleto/dinheiro). Cobrança automática em cartão ou débito exige contratar um provedor (Asaas, Mercado Pago, Stripe…); as tabelas já têm `gateway`/`gateway_ref`.
+
+## Backend (Supabase)
+Projeto `carro-facil` (ref `idqaecjrakbrpatgvczq`, sa-east-1). Chaves públicas em `js/config.js`.
+SQL: `supabase/schema.sql` (login/preferências/despachantes), `002_marketplace.sql` (perfis, garagens, veículos, interesses, fotos), `003_negocio.sql` (aprovação, consentimento, leads/créditos, radar, push) e `004_assinaturas.sql` (planos, assinaturas, cobranças, rotina diária). Função de push: `supabase/functions/notificar` (verify_jwt desligado; autenticada por segredo compartilhado em `config_privada`).
+Tudo com RLS; funções sensíveis (`SECURITY DEFINER`) checam o usuário por dentro. Telefones e créditos nunca ficam em tabelas públicas.
+
+**Dados de exemplo:** 6 garagens e 12 veículos fictícios (`garagens.demo = true`, aprovadas, sem dono). Para remover: `delete from garagens where demo;`.
 
 ### Configuração pendente (manual)
-1. **Google**: criar *ID do cliente OAuth* (Web) no Google Cloud Console, com URI de redirecionamento `https://idqaecjrakbrpatgvczq.supabase.co/auth/v1/callback`; ativar em Supabase → Authentication → Providers → Google.
-2. **Supabase** → Authentication → URL Configuration: *Site URL* e *Redirect URLs* com o endereço onde o app for publicado.
-3. E-mails de confirmação/recuperação: o remetente padrão do Supabase tem limite baixo; configure SMTP próprio para uso real.
-4. Deploy: importar o repositório no Vercel com *Root Directory* `HTML/carro-facil` (site estático, sem build).
+0. **Mensalidades:** em `#/admin/planos` defina o valor de cada plano e ative os que quiser oferecer; em `#/admin/ajustes` escreva as instruções de pagamento (chave Pix etc.) e a carência. Depois de aprovar uma garagem, crie a assinatura em `#/admin/assinaturas` (teste grátis, cortesia ou cobrança).
+1. **Administrador:** no SQL Editor do Supabase, `insert into public.admin_emails values ('seu-email@dominio.com');` (minúsculas). Só vale para e-mail **confirmado** no login.
+2. **Contato do push:** `update public.config_privada set valor = 'mailto:contato@seu-dominio.com' where chave = 'vapid_subject';`
+3. **Comercial:** em `js/config.js`, `contatoComercial` (WhatsApp `55DDDNUMERO`) para o garagista pedir créditos.
+4. **Google:** criar *ID do cliente OAuth* (Web) no Google Cloud Console, URI de redirecionamento `https://idqaecjrakbrpatgvczq.supabase.co/auth/v1/callback`; ativar em Supabase → Authentication → Providers → Google.
+5. **Supabase** → Authentication → URL Configuration: *Site URL* e *Redirect URLs* com o endereço publicado.
+6. E-mails de confirmação/recuperação: configure SMTP próprio (o padrão do Supabase tem limite baixo).
+7. **Deploy:** importar o repositório no Vercel com *Root Directory* `HTML/carro-facil` (site estático, sem build). Push exige HTTPS.
+8. **LGPD:** revisar com advogado os textos de consentimento e a política de privacidade antes de operar com clientes reais.

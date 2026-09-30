@@ -46,6 +46,7 @@
     return Math.round(ok / ks.length * 100);
   };
   CF.pontua = pontua;
+  CF.descreveBusca = b => Object.entries(b || {}).map(([k, v]) => ROTULOS[k]?.(v)).filter(Boolean);
 
   const foto = v => {
     const u = CF.fotoUrl(v.fotos?.[0]);
@@ -242,13 +243,19 @@
     if (!S.user) return { html: '<section class="pagina vazio"><p>Entre para definir suas preferências.</p><a class="btn" href="#/entrar">Entrar</a></section>' };
     try { await CF.carregaCatalogo(); } catch { return { html: `<section class="pagina">${erroCarga()}</section>` }; }
     return {
-      html: `<section class="pagina estreita"><h2>O que você procura</h2><p class="meta">Salvamos sua busca e avisamos os garagistas que têm carros parecidos.</p>
+      html: `<section class="pagina estreita"><h2>O que você procura</h2><p class="meta">Salvamos sua busca e mostramos primeiro os carros que mais combinam. Se você autorizar, garagens aprovadas com carros parecidos também podem falar com você.</p>
         <form id="fp" class="form-filtros">${formFiltros(S.busca ?? {})}
+        <label class="consentimento"><input type="checkbox" id="autoriza" ${S.autoriza ? 'checked' : ''}>
+          <span><strong>Quero ser encontrado por garagens.</strong> Autorizo que garagens cadastradas e aprovadas, com carros parecidos com a minha busca, vejam meu nome e WhatsApp e entrem em contato comigo. Posso desmarcar quando quiser.</span></label>
         <div class="acoes"><button class="btn grande" type="submit">Salvar preferências</button>
-        <button class="btn sec grande" type="button" data-acao="limpaPrefs">Limpar</button></div></form></section>`,
+        <button class="btn sec grande" type="button" data-acao="limpaPrefs">Limpar</button></div></form>
+        ${CF.push.cartao('Avisos no celular', 'Receba uma notificação quando entrar um carro parecido com a sua busca.')}</section>`,
       bind() {
-        const f = document.getElementById('fp'); ligaRegiao(f);
-        f.onsubmit = async e => { e.preventDefault(); S.busca = lerForm(f); await CF.salvaPrefs(); CF.toast('Preferências salvas!'); location.hash = '#/voce'; };
+        const f = document.getElementById('fp'); ligaRegiao(f); CF.push.liga();
+        f.onsubmit = async e => { e.preventDefault(); S.busca = lerForm(f);
+          const quer = document.getElementById('autoriza').checked;
+          if (quer && !S.autoriza) S.autorizadoEm = new Date().toISOString();
+          S.autoriza = quer; await CF.salvaPrefs(); CF.toast('Preferências salvas!'); location.hash = '#/voce'; };
       }
     };
   };
