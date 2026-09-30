@@ -6,9 +6,9 @@
 
   const navItens = () => {
     const g = CF.papel() === 'garagista';
-    if (g) return [['#/', 'carros', '🚗', 'Carros'], ['#/painel', 'painel', '🏪', 'Meus veículos'], ['#/interessados', 'interessados', '💬', 'Interessados'], ['#/conta', 'conta', '👤', 'Conta']];
-    return [['#/', 'carros', '🚗', 'Carros'], ['#/voce', 'voce', '✨', 'Para você'], ['#/despachantes', 'despachantes', '📞', 'Despachantes'], ['#/guia', 'guia', '📋', 'Guia'],
-      S.user ? ['#/conta', 'conta', '👤', 'Conta'] : ['#/entrar', 'entrar', '👤', 'Entrar']];
+    if (g) return [['#/', 'carros', 'car', 'Carros'], ['#/painel', 'painel', 'store', 'Meus veículos'], ['#/interessados', 'interessados', 'chat', 'Interessados'], ['#/conta', 'conta', 'user', 'Conta']];
+    return [['#/', 'carros', 'car', 'Carros'], ['#/voce', 'voce', 'spark', 'Para você'], ['#/despachantes', 'despachantes', 'phone', 'Despachantes'], ['#/guia', 'guia', 'guide', 'Guia'],
+      S.user ? ['#/conta', 'conta', 'user', 'Conta'] : ['#/entrar', 'entrar', 'user', 'Entrar']];
   };
 
   CF.render = async () => {
@@ -30,9 +30,9 @@
     r.bind?.();
     const ativa = { carro: 'carros', veiculo: 'painel', preferencias: 'voce', favoritos: '', simulador: 'guia', perfil: 'conta', 'nova-senha': 'conta' }[chave] ?? chave;
     document.getElementById('abas').innerHTML = navItens().map(([h, k, i, t]) =>
-      `<a href="${h}" class="${k === ativa ? 'ativa' : ''}" ${k === ativa ? 'aria-current="page"' : ''}><span aria-hidden="true">${i}</span>${t}</a>`).join('');
+      `<a href="${h}" class="${k === ativa ? 'ativa' : ''}" ${k === ativa ? 'aria-current="page"' : ''}><span aria-hidden="true">${CF.ico(i)}</span>${t}</a>`).join('');
     const c = document.getElementById('conta-link'); c.hidden = !CF.sb;
-    c.textContent = S.user ? '👤' : 'Entrar'; c.setAttribute('href', S.user ? '#/conta' : '#/entrar');
+    c.innerHTML = S.user ? CF.ico('user') : 'Entrar'; c.setAttribute('href', S.user ? '#/conta' : '#/entrar');
     c.setAttribute('aria-label', S.user ? 'Minha conta' : 'Entrar');
     window.scrollTo(0, 0);
   };
