@@ -51,5 +51,8 @@ Tudo com RLS; funções sensíveis (`SECURITY DEFINER`) checam o usuário por de
 4. **Google:** criar *ID do cliente OAuth* (Web) no Google Cloud Console, URI de redirecionamento `https://idqaecjrakbrpatgvczq.supabase.co/auth/v1/callback`; ativar em Supabase → Authentication → Providers → Google.
 5. **Supabase** → Authentication → URL Configuration: *Site URL* e *Redirect URLs* com o endereço publicado.
 6. E-mails de confirmação/recuperação: configure SMTP próprio (o padrão do Supabase tem limite baixo).
-7. **Deploy:** importar o repositório no Vercel com *Root Directory* `HTML/carro-facil` (site estático, sem build). Push exige HTTPS.
+7. **Deploy (escolha um):**
+   - **GitHub Pages** (já configurado em `.github/workflows/pages.yml`): em *Settings → Pages → Source* escolha **GitHub Actions**. O endereço sai como `https://<usuario>.github.io/FAQ-EPSY/`. (Em repositório privado o Pages exige plano pago do GitHub.)
+   - **Vercel:** importar o repositório com *Root Directory* `HTML/carro-facil` (site estático, sem build).
+   - Push exige HTTPS nos dois.
 8. **LGPD:** revisar com advogado os textos de consentimento e a política de privacidade antes de operar com clientes reais.
