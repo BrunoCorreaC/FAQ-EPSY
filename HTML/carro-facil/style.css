@@ -1,12 +1,12 @@
 /* Cadê meu carro? — mobile-first. Cores por token; tema claro/escuro automático. */
 :root {
   --bg: #f6f8f3; --surface: #fff; --ink: #13200f; --mut: #586654; --line: #e2e9dc;
-  --brand: #178230; --brand-ink: #fff; --brand-txt: #137029; --brand-soft: #e6f7e3;
+  --brand: #178230; --brand-ink: #fff; --accent-txt: #c2410c; --danger-txt: #b42318; --brand-txt: #137029; --brand-soft: #e6f7e3;
   --accent: #c2410c; --accent-ink: #fff; --zap: #0e7a3e; --danger: #b42318; --warn-bg: #fff4d6; --warn-ink: #5a4400;
   --sombra: 0 1px 2px rgba(19, 32, 15, .06), 0 6px 18px rgba(19, 32, 15, .06); --r: 16px;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #0d140c; --surface: #162014; --ink: #ebf2e7; --mut: #9db09a; --line: #283824; --brand-txt: #8ce86a; --brand-soft: #17391a;
+  :root { --bg: #0d140c; --surface: #162014; --ink: #ebf2e7; --mut: #9db09a; --line: #283824; --brand-txt: #8ce86a; --brand-soft: #17391a; --accent-txt: #ffa35c; --danger-txt: #ff8b7b;
     --warn-bg: #3a3212; --warn-ink: #f3e3a0; --sombra: 0 1px 2px rgba(0, 0, 0, .4); color-scheme: dark; }
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -63,7 +63,7 @@ main { outline: none; } main[aria-busy="true"] { opacity: .6; }
 .filtro-btn { position: relative; padding: 8px 14px; } .badge { background: var(--accent); color: #fff; border-radius: 99px; font-size: .75rem; min-width: 20px; height: 20px; display: inline-grid; place-items: center; padding: 0 5px; }
 .chips { display: flex; gap: 8px; overflow-x: auto; padding: 8px 16px 2px; max-width: 1080px; margin: 0 auto; scrollbar-width: none; }
 .chips::-webkit-scrollbar { display: none; } .chips.ativos { flex-wrap: wrap; overflow: visible; padding: 0 0 8px; margin: 0; }
-.chip { flex: none; min-height: 36px; padding: 4px 14px; border: 1px solid var(--line); border-radius: 99px; background: var(--surface); color: var(--ink); font: inherit; font-size: .9rem; cursor: pointer; white-space: nowrap; }
+.chip { flex: none; min-height: 40px; padding: 4px 14px; border: 1px solid var(--line); border-radius: 99px; background: var(--surface); color: var(--ink); font: inherit; font-size: .9rem; cursor: pointer; white-space: nowrap; }
 .chip.on { background: var(--brand-soft); border-color: var(--brand-txt); color: var(--brand-txt); font-weight: 600; } .chip.salvar { border-style: dashed; color: var(--brand-txt); }
 .linha-res { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 4px 0 12px; }
 .ordem { font-size: .9rem; color: var(--mut); display: flex; align-items: center; gap: 6px; } .ordem select { min-height: 38px; }
@@ -91,8 +91,8 @@ fieldset { border: 0; display: grid; gap: 8px; margin-bottom: 14px; min-width: 0
 .card.veic .corpo { padding: 12px 14px 14px; display: grid; gap: 2px; } .card.veic h3 a { color: var(--ink); text-decoration: none; }
 .preco { font-weight: 800; font-size: 1.25rem; color: var(--brand-txt); letter-spacing: -.01em; margin: 0; } .preco.grande { font-size: 1.75rem; }
 .local { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fav { position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .92); color: #9aa8a3; font-size: 1.3rem; cursor: pointer; box-shadow: var(--sombra); }
-.fav.on { color: #e0355a; } .fav.em-linha { position: static; flex: none; background: var(--surface); border: 1px solid var(--line); }
+.fav { position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .94); color: #5d6d67; cursor: pointer; box-shadow: var(--sombra); display: grid; place-items: center; }
+.fav svg { width: 22px; height: 22px; fill: none; } .fav.on { color: #c81e47; } .fav.on svg { fill: currentColor; } .fav.em-linha { position: static; flex: none; background: var(--surface); border: 1px solid var(--line); }
 .match { position: absolute; left: 8px; bottom: 8px; background: rgba(19, 32, 15, .82); color: #fff; font-size: .78rem; font-weight: 700; padding: 3px 10px; border-radius: 99px; } .match.alto { background: var(--accent); }
 .card.veic.horiz { flex-direction: row; } .card.veic.horiz .foto { flex: 0 0 38%; aspect-ratio: auto; min-height: 120px; } .card.veic.horiz .corpo { flex: 1; min-width: 0; }
 .card.veic.sk .foto, .card.veic.sk p { background: linear-gradient(90deg, var(--line), var(--brand-soft), var(--line)); background-size: 200% 100%; animation: sk 1.2s infinite linear; border-radius: 6px; } @keyframes sk { to { background-position: -200% 0; } }
@@ -103,7 +103,7 @@ fieldset { border: 0; display: grid; gap: 8px; margin-bottom: 14px; min-width: 0
 .voltar { display: inline-block; padding: 8px 0; text-decoration: none; font-weight: 600; }
 .galeria { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; border-radius: var(--r); margin-bottom: 14px; }
 .galeria > * { flex: 0 0 100%; scroll-snap-align: center; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--r); } .galeria .ph { aspect-ratio: 4 / 3; }
-.detalhe h1 { margin-top: 2px; } .match-linha { color: var(--accent); font-weight: 700; }
+.detalhe h1 { margin-top: 2px; } .match-linha { color: var(--accent-txt); font-weight: 700; }
 .specs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
 .specs div { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px; text-align: center; min-width: 0; } .specs dt { color: var(--mut); font-size: .78rem; } .specs dd { font-weight: 700; overflow-wrap: anywhere; }
 .descricao { white-space: pre-line; margin: 8px 0 14px; } .card.garagem h3 { margin: 2px 0; } .card.cta { display: grid; gap: 8px; }
@@ -214,11 +214,21 @@ dialog footer .btn { flex: 1; } dialog footer .btn-link { flex: none; }
 .abas-admin a { flex: none; padding: 8px 16px; border: 1px solid var(--line); border-radius: 99px; background: var(--surface); color: var(--ink); text-decoration: none; font-weight: 600; font-size: .92rem; min-height: 40px; display: inline-flex; align-items: center; }
 .abas-admin a.ativa { background: var(--brand); border-color: var(--brand); color: #fff; }
 .kpis-fin { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); margin: 8px 0; } .kpis-fin strong { font-size: 1.25rem; overflow-wrap: anywhere; }
-.kpi-alerta { border-color: var(--danger) !important; } .kpi-alerta strong { color: var(--danger); }
-.aviso-linha { color: var(--danger); font-weight: 600; } .aviso.alerta { background: #fde8e6; color: #7a1a12; } .aviso.alerta a { color: inherit; }
+.kpi-alerta { border-color: var(--danger) !important; } .kpi-alerta strong { color: var(--danger-txt); }
+.aviso-linha { color: var(--danger-txt); font-weight: 600; } .aviso.alerta { background: #fde8e6; color: #7a1a12; } .aviso.alerta a { color: inherit; }
 @media (prefers-color-scheme: dark) { .aviso.alerta { background: #4a1f1b; color: #ffd6d1; } }
 details.editar { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; } details.editar summary { cursor: pointer; font-weight: 600; color: var(--brand-txt); min-height: 40px; display: flex; align-items: center; }
 details.editar .form { margin-top: 8px; }
 .instr { white-space: pre-line; background: var(--brand-soft); padding: 12px; border-radius: 12px; margin-bottom: 8px; }
 .cobrancas { list-style: none; display: grid; gap: 8px; } .cobrancas li { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; }
 .cobrancas small { display: block; color: var(--mut); font-size: .78rem; } .preco small { font-size: .85rem; color: var(--mut); font-weight: 500; }
+
+/* revisão de UI: entrada compacta no celular, placeholder com identidade, toque confortável */
+.ph { background: linear-gradient(160deg, color-mix(in srgb, var(--c) 26%, var(--surface)), color-mix(in srgb, var(--brand) 13%, var(--surface))); }
+.btn-link.perigo { color: var(--danger-txt); }
+@media (max-width: 819px) {
+  .hero { padding: 16px 0 18px; } .hero h1 { font-size: 1.65rem; } .eyebrow { margin-bottom: 2px; }
+  .hero-sub { margin: 6px 0 10px; font-size: .95rem; } .hero-stats span { padding: 3px 12px; font-size: .82rem; }
+}
+.match { background: #24331f; } .match.alto { background: var(--accent); }
+@media (prefers-color-scheme: dark) { .fav.em-linha { color: #b4c2b0; } .fav.em-linha.on { color: #ff7a99; } }
