@@ -15,10 +15,50 @@
   let pos = null; // {lat,lng} do usuário, só em memória
   const filtro = { q: '', max: 100000, tipo: '', cambio: '', cidade: '' };
 
+  // ---- login (Supabase); sem config/biblioteca o app segue funcionando sem conta ----
+  const cfg = window.CF_CONFIG || {};
+  const sb = (window.supabase && cfg.supabaseUrl && cfg.supabaseKey)
+    ? window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, { auth: { flowType: 'pkce' } }) : null;
+  let user = null;
+  const precisaLogin = () => !!sb && !user;
+  const bloqueio = '<a class="btn grande" href="#/entrar">🔒 Entre para ver o contato</a>';
+
   const atualizaFavCount = () => { document.getElementById('fav-count').textContent = favs.length; };
+  const atualizaConta = () => {
+    const a = document.getElementById('conta-link');
+    a.hidden = !sb; a.textContent = user ? '👤 Conta' : 'Entrar'; a.setAttribute('href', user ? '#/conta' : '#/entrar');
+  };
+  const salvaPrefs = () => {
+    if (!sb || !user) return;
+    sb.from('preferencias').upsert({ user_id: user.id, favoritos: favs, passos: checks, atualizado_em: new Date().toISOString() }).then(() => {}, () => {});
+  };
+  const guardaLocal = () => { store.set('cf_favs', favs); store.set('cf_checks', checks); atualizaFavCount(); };
   const toggleFav = id => {
     favs = favs.includes(id) ? favs.filter(f => f !== id) : [...favs, id];
-    store.set('cf_favs', favs); atualizaFavCount();
+    guardaLocal(); salvaPrefs();
+  };
+  // junta o que já estava no aparelho com o que está salvo na conta
+  const carregaPrefs = async () => {
+    const { data } = await sb.from('preferencias').select('favoritos,passos').eq('user_id', user.id).maybeSingle();
+    favs = [...new Set([...(data?.favoritos ?? []), ...favs])];
+    checks = [...new Set([...(data?.passos ?? []), ...checks])];
+    guardaLocal(); salvaPrefs();
+  };
+  const mudouUsuario = async sessao => {
+    const novo = sessao?.user ?? null;
+    if (novo?.id === user?.id) return; // renovação de token
+    user = novo;
+    if (user) { try { await carregaPrefs(); } catch { /* segue com os dados locais */ } }
+    else { favs = []; checks = []; guardaLocal(); } // não deixa dados de uma conta em aparelho compartilhado
+    atualizaConta(); rota();
+  };
+  const traduzErro = e => {
+    const m = (e.message || '').toLowerCase();
+    if (m.includes('invalid login')) return 'E-mail ou senha incorretos.';
+    if (m.includes('not confirmed')) return 'Confirme seu e-mail antes de entrar.';
+    if (m.includes('password')) return 'Senha inválida ou fraca. Use ao menos 8 caracteres.';
+    if (e.status === 429 || m.includes('rate limit')) return 'Muitas tentativas. Aguarde um pouco e tente de novo.';
+    return 'Não foi possível concluir. Tente novamente.';
   };
 
   const dist = (a, b) => {
@@ -54,8 +94,8 @@
         <p class="tags">${d.servicos.map(s => `<span>${esc(s)}</span>`).join('')}</p>
       </div>
       <div class="acoes">
-        <a class="btn" href="tel:+${d.tel}">📞 Ligar ${fmtTel(d.tel)}</a>
-        <a class="btn zap" target="_blank" rel="noopener" href="${wa(d.tel, 'Olá! Vi seu contato no app Carro Fácil e preciso de ajuda com a documentação de um carro.')}">WhatsApp</a>
+        ${precisaLogin() ? bloqueio : `<a class="btn" href="tel:+${d.tel}">📞 Ligar ${fmtTel(d.tel)}</a>
+        <a class="btn zap" target="_blank" rel="noopener" href="${wa(d.tel, 'Olá! Vi seu contato no app Carro Fácil e preciso de ajuda com a documentação de um carro.')}">WhatsApp</a>`}
       </div>
     </article>`;
 
@@ -110,8 +150,8 @@
         <p>${esc(c.obs)}</p>
         <p class="meta">Vendedor: ${esc(c.vendedor)} · 📍 ${esc(c.cidade)}</p>
         <div class="acoes fixa">
-          <a class="btn zap grande" target="_blank" rel="noopener" href="${wa(c.tel, msg)}">Falar no WhatsApp</a>
-          <a class="btn grande sec" href="tel:+${c.tel}">📞 Ligar</a>
+          ${precisaLogin() ? bloqueio : `<a class="btn zap grande" target="_blank" rel="noopener" href="${wa(c.tel, msg)}">Falar no WhatsApp</a>
+          <a class="btn grande sec" href="tel:+${c.tel}">📞 Ligar</a>`}
           <button class="btn grande sec" data-fav="${c.id}">${favs.includes(c.id) ? '♥ Favorito' : '♡ Favoritar'}</button>
         </div>
         <div class="aviso">💡 Antes de fechar: peça laudo cautelar e consulte débitos. <a href="#/guia">Ver guia</a></div>
@@ -143,6 +183,45 @@
         <h3>Documentos que você vai precisar</h3>
         <ul class="docs">${DOCUMENTOS.map(d => `<li>${esc(d)}</li>`).join('')}</ul>
         <a class="btn grande" href="#/despachantes">Falar com um despachante</a>`;
+    },
+
+    entrar() {
+      if (!sb) return '<p class="vazio">Login indisponível: configure o Supabase em <code>js/config.js</code>.</p>';
+      if (user) return '<p class="vazio">Você já está conectado. <a href="#/conta">Ir para a conta</a></p>';
+      return `
+        <h2 id="a-titulo">Entrar</h2>
+        <p class="meta">Com uma conta você vê os contatos de vendedores e despachantes e salva favoritos e o progresso do guia.</p>
+        <button class="btn grande sec" id="a-google" type="button">Continuar com Google</button>
+        <p class="meta ou">ou use e-mail e senha</p>
+        <form class="sim" id="a-form">
+          <label>E-mail<input type="email" id="a-email" autocomplete="email" required></label>
+          <label>Senha<input type="password" id="a-senha" autocomplete="current-password" minlength="8" required></label>
+          <button class="btn grande" id="a-ok" type="submit">Entrar</button>
+        </form>
+        <button class="btn-link" id="a-troca" type="button">Não tem conta? Criar conta</button>
+        <button class="btn-link" id="a-esqueci" type="button">Esqueci a senha</button>
+        <p class="meta" id="a-msg" role="status"></p>`;
+    },
+
+    conta() {
+      if (!user) return '<p class="vazio">Você não está conectado. <a href="#/entrar">Entrar</a></p>';
+      const g = user.app_metadata?.provider === 'google' ? 'Google' : 'e-mail e senha';
+      return `
+        <h2>Minha conta</h2>
+        <div class="card"><p><strong>${esc(user.email || '')}</strong></p><p class="meta">Login com ${g}</p>
+          <p class="meta">${favs.length} favorito(s) · ${checks.length} de ${PASSOS.length} passos do guia concluídos</p></div>
+        <button class="btn grande sec" id="a-sair" type="button">Sair</button>`;
+    },
+
+    'nova-senha'() {
+      if (!user) return '<p class="vazio">Link expirado. <a href="#/entrar">Voltar ao login</a></p>';
+      return `
+        <h2>Nova senha</h2>
+        <form class="sim" id="n-form">
+          <label>Nova senha<input type="password" id="n-senha" autocomplete="new-password" minlength="8" required></label>
+          <button class="btn grande" type="submit">Salvar senha</button>
+        </form>
+        <p class="meta" id="n-msg" role="status"></p>`;
     },
 
     simulador(_, params) {
@@ -200,11 +279,62 @@
       render();
     },
 
+    entrar() {
+      const $ = id => document.getElementById(id);
+      const msg = t => { $('a-msg').textContent = t; };
+      const volta = () => location.origin + location.pathname;
+      let criar = false;
+      $('a-troca').onclick = () => {
+        criar = !criar;
+        $('a-titulo').textContent = criar ? 'Criar conta' : 'Entrar';
+        $('a-ok').textContent = criar ? 'Criar conta' : 'Entrar';
+        $('a-troca').textContent = criar ? 'Já tem conta? Entrar' : 'Não tem conta? Criar conta';
+        $('a-senha').autocomplete = criar ? 'new-password' : 'current-password';
+        msg('');
+      };
+      $('a-google').onclick = async () => {
+        const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: volta() } });
+        if (error) msg('Login com Google indisponível no momento.');
+      };
+      $('a-esqueci').onclick = async () => {
+        const email = $('a-email').value.trim();
+        if (!email) { msg('Digite seu e-mail acima e toque de novo em "Esqueci a senha".'); return; }
+        await sb.auth.resetPasswordForEmail(email, { redirectTo: volta() });
+        msg('Se esse e-mail tiver conta, enviaremos um link para criar uma nova senha.');
+      };
+      $('a-form').onsubmit = async e => {
+        e.preventDefault();
+        const email = $('a-email').value.trim(), password = $('a-senha').value;
+        $('a-ok').disabled = true; msg('Aguarde…');
+        const r = criar ? await sb.auth.signUp({ email, password, options: { emailRedirectTo: volta() } })
+                        : await sb.auth.signInWithPassword({ email, password });
+        $('a-ok').disabled = false;
+        if (r.error) { msg(traduzErro(r.error)); return; }
+        if (criar && !r.data.session) { msg('Enviamos um e-mail de confirmação. Confirme para entrar.'); return; }
+        location.hash = '#/';
+      };
+    },
+
+    conta() {
+      const b = document.getElementById('a-sair'); if (!b) return;
+      b.onclick = async () => { await sb.auth.signOut(); location.hash = '#/'; };
+    },
+
+    'nova-senha'() {
+      const f = document.getElementById('n-form'); if (!f) return;
+      f.onsubmit = async e => {
+        e.preventDefault();
+        const { error } = await sb.auth.updateUser({ password: document.getElementById('n-senha').value });
+        document.getElementById('n-msg').textContent = error ? traduzErro(error) : 'Senha alterada!';
+        if (!error) setTimeout(() => { location.hash = '#/conta'; }, 800);
+      };
+    },
+
     guia() {
       app.onchange = e => {
         const i = e.target.dataset.passo; if (i == null) return;
         checks = e.target.checked ? [...new Set([...checks, +i])] : checks.filter(x => x !== +i);
-        store.set('cf_checks', checks);
+        guardaLocal(); salvaPrefs();
       };
     },
 
@@ -252,7 +382,15 @@
 
   window.addEventListener('hashchange', rota);
   atualizaFavCount();
+  atualizaConta();
   rota();
+  if (sb) {
+    // não chamar o Supabase direto dentro do callback (risco de travar): adia com setTimeout
+    sb.auth.onAuthStateChange((evento, sessao) => setTimeout(async () => {
+      await mudouUsuario(sessao);
+      if (evento === 'PASSWORD_RECOVERY') location.hash = '#/nova-senha';
+    }, 0));
+  }
 
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     navigator.serviceWorker.register('sw.js').catch(() => {});

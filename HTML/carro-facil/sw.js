@@ -1,5 +1,5 @@
-const CACHE = 'carro-facil-v1';
-const ARQUIVOS = ['./', 'index.html', 'style.css', 'js/data.js', 'js/app.js', 'icon.svg', 'manifest.json'];
+const CACHE = 'carro-facil-v2';
+const ARQUIVOS = ['./', 'index.html', 'style.css', 'js/data.js', 'js/config.js', 'js/app.js', 'icon.svg', 'manifest.json'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ARQUIVOS)));
