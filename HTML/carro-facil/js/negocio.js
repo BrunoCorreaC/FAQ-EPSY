@@ -52,7 +52,7 @@
     const { error } = await CF.sb.rpc('desbloquear_lead', { p_lead: el.dataset.id });
     if (error) {
       const m = error.message || '';
-      CF.toast(m.includes('sem_creditos') ? 'Sem créditos disponíveis.' : m.includes('lead_indisponivel') ? 'Este cliente não está mais disponível.' : 'Não foi possível liberar o contato.');
+      CF.toastErro(error);
       el.disabled = false; if (m.includes('lead_indisponivel')) CF.render(); return;
     }
     const p = (await CF.sb.from('garagem_privado').select('cnpj,creditos').eq('garagem_id', S.garagem.id).maybeSingle()).data; if (p) S.priv = p;
@@ -98,12 +98,13 @@
   };
   CF.acoes.admStatus = async el => {
     const { error } = await CF.sb.rpc('admin_definir_status', { p_garagem: el.dataset.id, p_status: el.dataset.s });
-    CF.toast(error ? 'Não foi possível alterar.' : 'Status atualizado.'); CF.render();
+    CF.toast(error ? CF.msgErro(error) : 'Status atualizado.'); CF.render();
   };
   CF.acoes.admCred = async el => {
-    const q = parseInt($('cq-' + el.dataset.id)?.value, 10);
-    if (!q) { CF.toast('Informe uma quantidade diferente de zero.'); return; }
+    const r0 = CF.val.inteiro($('cq-' + el.dataset.id)?.value, { min: -1000, max: 1000, rotulo: 'a quantidade' });
+    if (r0.erro || !r0.ok) { CF.toast(r0.erro || 'Informe uma quantidade diferente de zero.'); return; }
+    const q = r0.ok;
     const { data: total, error } = await CF.sb.rpc('admin_conceder_creditos', { p_garagem: el.dataset.id, p_qtd: q, p_motivo: 'Painel admin' });
-    CF.toast(error ? 'Não foi possível alterar.' : `Créditos: ${total}`); CF.render();
+    CF.toast(error ? CF.msgErro(error) : `Créditos: ${total}`); CF.render();
   };
 })();

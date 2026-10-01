@@ -8,7 +8,7 @@
   const dia = d => d ? new Date(d + (String(d).length === 10 ? 'T12:00:00' : '')).toLocaleDateString('pt-BR') : '—';
   const mesAno = d => { const [a, m] = String(d).split('-'); return `${m}/${a}`; };
   CF.reais = reais;
-  const ok = (x, msg) => CF.toast(x.error ? (msg || 'Não foi possível concluir.') : 'Pronto!');
+  const ok = x => CF.toast(x.error ? CF.msgErro(x.error) : 'Pronto!');
 
   const STATUS_ASSIN = { teste: 'Em teste', ativa: 'Ativa', em_atraso: 'Em atraso', suspensa: 'Suspensa', cancelada: 'Cancelada', cortesia: 'Cortesia', sem_assinatura: 'Sem assinatura', demo: 'Demonstração' };
   const STATUS_COB = { aberta: 'Em aberto', vencida: 'Vencida', paga: 'Paga', cancelada: 'Cancelada' };
@@ -34,8 +34,8 @@
     const novo = g => `<article class="card adm"><h3>${esc(g.nome)} ${tag('Aprovada, sem assinatura', true)}</h3><p class="meta">${esc(g.cidade)}/${esc(g.uf)}</p>
       ${planos.length ? `<form class="form" data-form="criaAssin" data-id="${g.id}">
         <label class="campo">Plano<select name="plano">${optPlanos()}</select></label>
-        <div class="dupla"><label class="campo">Vencimento (dia 1 a 28)<input name="dia" type="number" min="1" max="28" value="10" required></label>
-          <label class="campo">Teste grátis (dias)<input name="teste" type="number" min="0" max="365" value="0"></label></div>
+        <div class="dupla"><label class="campo">Vencimento (dia 1 a 28)<input name="dia" inputmode="numeric" maxlength="2" value="10"></label>
+          <label class="campo">Teste grátis (dias)<input name="teste" inputmode="numeric" maxlength="3" value="0"></label></div>
         <label class="campo">Valor especial (R$, opcional)<input name="valor" inputmode="decimal" placeholder="usa o valor do plano"></label>
         <label class="consentimento"><input type="checkbox" name="cortesia"><span>Cortesia (sem cobrança) — libera sem gerar mensalidades</span></label>
         <button class="btn" type="submit">Criar assinatura</button></form>` : '<p class="meta">Ative ao menos um plano na aba Planos para criar assinaturas.</p>'}</article>`;
@@ -52,8 +52,8 @@
         <details class="editar"><summary>Alterar plano, valor ou vencimento</summary>
           <form class="form" data-form="alteraAssin" data-id="${a.garagem_id}">
             <label class="campo">Plano<select name="plano">${optPlanos(a.plano_id)}</select></label>
-            <div class="dupla"><label class="campo">Valor (R$)<input name="valor" inputmode="decimal" value="${emReais(a.valor_centavos)}" required></label>
-              <label class="campo">Dia do vencimento<input name="dia" type="number" min="1" max="28" value="${a.dia_vencimento}" required></label></div>
+            <div class="dupla"><label class="campo">Valor (R$)<input name="valor" inputmode="decimal" value="${emReais(a.valor_centavos)}"></label>
+              <label class="campo">Dia do vencimento<input name="dia" inputmode="numeric" maxlength="2" value="${a.dia_vencimento}"></label></div>
             <button class="btn sec" type="submit">Salvar alterações</button></form></details></article>`;
     };
     return pagina('assinaturas', `
@@ -80,7 +80,7 @@
         ${c.status === 'paga' ? `<p class="meta">Pago em ${dia(c.pago_em)} via ${esc(c.forma ?? '—')}${c.observacao ? ` · ${esc(c.observacao)}` : ''}</p>` : (c.observacao ? `<p class="meta">${esc(c.observacao)}</p>` : '')}
         ${aberta ? `<details class="editar"><summary>Registrar pagamento</summary><form class="form" data-form="pagaCob" data-id="${c.id}">
           <div class="dupla"><label class="campo">Forma<select name="forma"><option value="pix">Pix</option><option value="boleto">Boleto</option><option value="cartao">Cartão</option><option value="dinheiro">Dinheiro</option><option value="outro">Outro</option></select></label>
-            <label class="campo">Data<input name="data" type="date" value="${new Date().toISOString().slice(0, 10)}" required></label></div>
+            <label class="campo">Data<input name="data" type="date" max="${new Date().toISOString().slice(0, 10)}" value="${new Date().toISOString().slice(0, 10)}"></label></div>
           <label class="campo">Observação (opcional)<input name="obs" maxlength="200" placeholder="ex.: comprovante enviado por WhatsApp"></label>
           <button class="btn" type="submit">Confirmar pagamento</button></form></details>
           <button class="btn-link peq" data-acao="cobCancela" data-id="${c.id}">Cancelar cobrança</button>` : ''}
@@ -92,10 +92,10 @@
 
   // ---------- planos ----------
   const formPlano = p => `<form class="form" data-form="salvaPlano" data-id="${p?.id ?? ''}">
-    <label class="campo">Nome do plano<input name="nome" required minlength="2" maxlength="60" value="${esc(p?.nome ?? '')}"></label>
-    <div class="dupla"><label class="campo">Mensalidade (R$)<input name="valor" inputmode="decimal" required placeholder="0,00" value="${p ? emReais(p.valor_centavos) : ''}"></label>
-      <label class="campo">Máx. de anúncios ativos<input name="max" type="number" min="1" placeholder="ilimitado" value="${p?.max_anuncios ?? ''}"></label></div>
-    <label class="campo">Créditos de contato por mês<input name="cred" type="number" min="0" value="${p?.creditos_mensais ?? 0}"></label>
+    <label class="campo">Nome do plano<input name="nome" maxlength="60" value="${esc(p?.nome ?? '')}"></label>
+    <div class="dupla"><label class="campo">Mensalidade (R$)<input name="valor" inputmode="decimal" placeholder="0,00" value="${p ? emReais(p.valor_centavos) : ''}"></label>
+      <label class="campo">Máx. de anúncios ativos<input name="max" inputmode="numeric" placeholder="ilimitado" value="${p?.max_anuncios ?? ''}"></label></div>
+    <label class="campo">Créditos de contato por mês<input name="cred" inputmode="numeric" value="${p?.creditos_mensais ?? 0}"></label>
     <label class="campo">Descrição (aparece para o garagista)<input name="desc" maxlength="300" value="${esc(p?.descricao ?? '')}"></label>
     <label class="consentimento"><input type="checkbox" name="ativo" ${p?.ativo ? 'checked' : ''}><span>Plano ativo (pode ser contratado)</span></label>
     <button class="btn" type="submit">${p ? 'Salvar plano' : 'Criar plano'}</button></form>`;
@@ -115,7 +115,7 @@
     return pagina('ajustes', `<h2>Ajustes de cobrança</h2>
       <form class="form" data-form="salvaConfig">
         <label class="campo">Instruções de pagamento (o garagista vê na página Assinatura)<textarea name="instr" rows="5" maxlength="1000" placeholder="Ex.: Pix (CNPJ 00.000.000/0001-00) ou boleto. Envie o comprovante pelo WhatsApp.">${esc(r.data.instrucoes_pagamento ?? '')}</textarea></label>
-        <label class="campo">Dias de carência após o vencimento<input name="carencia" type="number" min="0" max="60" value="${r.data.dias_carencia ?? 5}" required></label>
+        <label class="campo">Dias de carência após o vencimento<input name="carencia" inputmode="numeric" maxlength="2" value="${r.data.dias_carencia ?? 5}"></label>
         <p class="meta">Durante a carência a garagem em atraso continua no ar. Depois dela, os anúncios saem do catálogo até a regularização.</p>
         <button class="btn" type="submit">Salvar ajustes</button></form>
       <div class="card"><h3>Cobrança automática</h3><p class="meta">Hoje as mensalidades são geradas automaticamente e o recebimento é registrado por você (Pix, boleto ou dinheiro). A cobrança automática em cartão ou débito depende de contratar um provedor de pagamento (por exemplo Asaas, Mercado Pago ou Stripe); a estrutura já guarda o vínculo com o provedor.</p></div>`);
@@ -133,27 +133,41 @@
   const val = (f, n) => f.elements[n]?.value;
   const formularios = {
     async criaAssin(f) {
-      const cortesia = f.elements.cortesia.checked, v = val(f, 'valor').trim();
-      const centavos = v ? paraCentavos(v) : null; if (v && centavos == null) { CF.toast('Valor inválido.'); return; }
-      ok(await CF.sb.rpc('admin_criar_assinatura', { p_garagem: f.dataset.id, p_plano: +val(f, 'plano'), p_dia: +val(f, 'dia'), p_dias_teste: +val(f, 'teste') || 0, p_valor_centavos: centavos, p_cortesia: cortesia }));
+      const v = CF.validar(f, [['plano', x => x ? { ok: +x } : { erro: 'Escolha um plano.' }], ['dia', x => CF.val.inteiro(x, { min: 1, max: 28, rotulo: 'o dia do vencimento' })],
+        ['teste', x => CF.val.inteiro(x, { min: 0, max: 365, rotulo: 'os dias de teste', obrigatorio: false })], ['valor', x => CF.val.reais(x, { min: 0, max: 100000, rotulo: 'valor', obrigatorio: false })]]);
+      if (!v) return false;
+      ok(await CF.sb.rpc('admin_criar_assinatura', { p_garagem: f.dataset.id, p_plano: v.plano, p_dia: v.dia, p_dias_teste: v.teste || 0, p_valor_centavos: v.valor == null ? null : Math.round(v.valor * 100), p_cortesia: f.elements.cortesia.checked }));
     },
     async alteraAssin(f) {
-      const c = paraCentavos(val(f, 'valor')); if (c == null) { CF.toast('Valor inválido.'); return; }
-      ok(await CF.sb.rpc('admin_alterar_assinatura', { p_garagem: f.dataset.id, p_plano: +val(f, 'plano'), p_valor_centavos: c, p_dia: +val(f, 'dia') }));
+      const v = CF.validar(f, [['plano', x => x ? { ok: +x } : { erro: 'Escolha um plano.' }], ['valor', x => CF.val.reais(x, { min: 0, max: 100000, rotulo: 'valor' })], ['dia', x => CF.val.inteiro(x, { min: 1, max: 28, rotulo: 'o dia do vencimento' })]]);
+      if (!v) return false;
+      ok(await CF.sb.rpc('admin_alterar_assinatura', { p_garagem: f.dataset.id, p_plano: v.plano, p_valor_centavos: Math.round(v.valor * 100), p_dia: v.dia }));
     },
-    async pagaCob(f) { ok(await CF.sb.rpc('admin_registrar_pagamento', { p_cobranca: +f.dataset.id, p_forma: val(f, 'forma'), p_pago_em: val(f, 'data'), p_obs: val(f, 'obs') })); },
+    async pagaCob(f) {
+      const v = CF.validar(f, [['forma', x => ['pix', 'boleto', 'cartao', 'dinheiro', 'outro'].includes(x) ? { ok: x } : { erro: 'Escolha a forma de pagamento.' }], ['data', x => CF.val.data(x)],
+        ['obs', x => CF.val.texto(x, { max: 200, rotulo: 'a observação', obrigatorio: false })]]);
+      if (!v) return false;
+      ok(await CF.sb.rpc('admin_registrar_pagamento', { p_cobranca: +f.dataset.id, p_forma: v.forma, p_pago_em: v.data, p_obs: v.obs ?? '' }));
+    },
     async salvaPlano(f) {
-      const c = paraCentavos(val(f, 'valor')); if (c == null) { CF.toast('Informe a mensalidade em reais.'); return; }
-      ok(await CF.sb.rpc('admin_salvar_plano', { p_id: f.dataset.id ? +f.dataset.id : null, p_nome: val(f, 'nome').trim(), p_valor_centavos: c, p_max_anuncios: val(f, 'max') ? +val(f, 'max') : null,
-        p_creditos: +val(f, 'cred') || 0, p_descricao: val(f, 'desc').trim(), p_ativo: f.elements.ativo.checked }));
+      const v = CF.validar(f, [['nome', x => CF.val.texto(x, { min: 2, max: 60, rotulo: 'o nome do plano' })], ['valor', x => CF.val.reais(x, { min: 0, max: 100000, rotulo: 'valor' })],
+        ['max', x => CF.val.inteiro(x, { min: 1, max: 10000, rotulo: 'o limite de anúncios', obrigatorio: false })], ['cred', x => CF.val.inteiro(x, { min: 0, max: 10000, rotulo: 'os créditos', obrigatorio: false })],
+        ['desc', x => CF.val.texto(x, { max: 300, rotulo: 'a descrição', obrigatorio: false })]]);
+      if (!v) return false;
+      ok(await CF.sb.rpc('admin_salvar_plano', { p_id: f.dataset.id ? +f.dataset.id : null, p_nome: v.nome, p_valor_centavos: Math.round(v.valor * 100), p_max_anuncios: v.max, p_creditos: v.cred || 0, p_descricao: v.desc ?? '', p_ativo: f.elements.ativo.checked }));
     },
-    async salvaConfig(f) { ok(await CF.sb.rpc('admin_definir_config', { p_instrucoes: val(f, 'instr'), p_dias_carencia: +val(f, 'carencia') })); }
+    async salvaConfig(f) {
+      const v = CF.validar(f, [['instr', x => CF.val.texto(x, { max: 1000, rotulo: 'as instruções', obrigatorio: false })], ['carencia', x => CF.val.inteiro(x, { min: 0, max: 60, rotulo: 'a carência' })]]);
+      if (!v) return false;
+      ok(await CF.sb.rpc('admin_definir_config', { p_instrucoes: v.instr ?? '', p_dias_carencia: v.carencia }));
+    }
   };
   document.addEventListener('submit', async e => {
     const f = e.target.closest('form[data-form]'); if (!f || !formularios[f.dataset.form]) return;
     e.preventDefault();
     const b = f.querySelector('[type=submit]'); if (b) b.disabled = true;
-    try { await formularios[f.dataset.form](f); } finally { CF.render(); }
+    let enviou = false;
+    try { enviou = (await formularios[f.dataset.form](f)) !== false; } catch (err) { CF.toastErro(err); } finally { if (enviou) CF.render(); else if (b) b.disabled = false; }
   });
   const confirma = (el, texto) => { if (el.dataset.conf === '1') return true; el.dataset.conf = '1'; el.dataset.t0 = el.textContent; el.textContent = texto; el.classList.add('perigo'); return false; };
   Object.assign(CF.acoes, {

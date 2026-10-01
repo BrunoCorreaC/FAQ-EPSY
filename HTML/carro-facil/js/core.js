@@ -25,6 +25,7 @@
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     star: '<path d="M12 3.500l2.600 5.400 5.900.8-4.300 4.100 1 5.900L12 16.900 6.800 19.700l1-5.900L3.500 9.700l5.900-.8z"/>'
   };
+  CF.seloConf = v => v?.conferido ? `<span class="verif" title="Marca, modelo e ano conferem com o registro do veículo (consulta pela placa)">${CF.ico('check', 'peq')}Dados conferidos</span>` : '';
   CF.ico = (nome, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONES[nome] ?? ''}</svg>`;
   CF.wa = (tel, msg) => `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
 
@@ -60,8 +61,9 @@
   CF.salvaPrefs = async () => {
     CF.guardaLocal();
     if (!sb || !S.user) return;
-    await sb.from('preferencias').upsert({ user_id: S.user.id, favoritos: S.favs, passos: S.checks, busca: S.busca,
+    const { error } = await sb.from('preferencias').upsert({ user_id: S.user.id, favoritos: S.favs, passos: S.checks, busca: S.busca,
       autoriza_contato: S.autoriza, autorizado_em: S.autoriza ? (S.autorizadoEm ?? (S.autorizadoEm = new Date().toISOString())) : null, atualizado_em: new Date().toISOString() });
+    if (error) throw error;
   };
 
   // catálogo público (veículos ativos + garagens)
@@ -70,7 +72,7 @@
     if (!sb) throw new Error('sem-supabase');
     const [v, g] = await Promise.all([
       sb.from('veiculos').select('*').eq('status', 'ativo').order('criado_em', { ascending: false }).limit(500),
-      sb.from('garagens').select('id,nome,cidade,uf')
+      sb.from('garagens').select('id,nome,cidade,uf,demo')
     ]);
     if (v.error || g.error) throw (v.error || g.error);
     S.veiculos = v.data ?? [];

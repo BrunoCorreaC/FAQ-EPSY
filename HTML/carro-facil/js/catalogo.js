@@ -65,10 +65,10 @@
       <button class="fav ${fav ? 'on' : ''}" data-acao="fav" data-id="${v.id}" aria-label="Favoritar" aria-pressed="${fav}">${CF.ico('heart')}</button>
       <div class="corpo">
         <p class="preco">${brl(v.preco)}</p>
-        <h3><a href="#/carro/${v.id}">${esc(v.marca)} ${esc(v.modelo)}</a></h3>
+        <h3><a href="#/carro/${v.id}">${esc(v.marca)} ${esc(v.modelo)}</a></h3>${CF.seloConf(v) ? `<p>${CF.seloConf(v)}</p>` : ''}
         <p class="meta">${v.ano} · ${num(v.km)} km · ${esc(v.cambio)}</p>
         <p class="meta local">${CF.ico('pin', 'peq')} ${esc(v.cidade)}/${esc(v.uf)}</p>
-        ${g ? `<p class="garagem-lin"><span class="avatar" aria-hidden="true">${esc((g.nome || '?')[0].toUpperCase())}</span>${esc(g.nome)}</p>` : ''}
+        ${g ? `<p class="garagem-lin"><span class="avatar" aria-hidden="true">${esc((g.nome || '?')[0].toUpperCase())}</span>${esc(g.nome)}${g.demo === false ? ` <span class="verif" title="Garagem com CNPJ verificado">${CF.ico('check', 'peq')}Verificada</span>` : ''}</p>` : ''}
       </div></article>`;
   };
   CF.cardCarro = card;
@@ -128,6 +128,7 @@
     d.innerHTML = `<form id="ff" method="dialog">
       <header><h2>Filtros</h2><button class="btn-ico" type="button" data-acao="fechaFolha" aria-label="Fechar">✕</button></header>
       <div class="rolagem">${formFiltros(F)}</div>
+      <p class="erro-geral" id="ff-erro" role="alert" hidden></p>
       <footer><button class="btn-link" type="button" data-acao="limpaFiltros">Limpar</button>
         <button class="btn grande" type="button" data-acao="aplicaFiltros" id="ff-ver">Ver resultados</button></footer></form>`;
     const form = d.querySelector('form'); ligaRegiao(form);
@@ -138,6 +139,9 @@
   CF.acoes.fechaFolha = () => document.getElementById('folha').close();
   CF.acoes.aplicaFiltros = () => {
     const novo = lerForm(document.getElementById('ff'));
+    const problema = CF.val.filtros(novo), box = document.getElementById('ff-erro');
+    if (problema) { box.textContent = problema; box.hidden = false; box.scrollIntoView?.({ block: 'nearest' }); return; }
+    box.hidden = true;
     for (const k of Object.keys(F)) if (k !== 'ordem' && k !== 'q') delete F[k];
     Object.assign(F, novo); document.getElementById('folha').close(); CF.render();
   };
@@ -245,6 +249,7 @@
     return {
       html: `<section class="pagina estreita"><h2>O que você procura</h2><p class="meta">Salvamos sua busca e mostramos primeiro os carros que mais combinam. Se você autorizar, garagens aprovadas com carros parecidos também podem falar com você.</p>
         <form id="fp" class="form-filtros">${formFiltros(S.busca ?? {})}
+        <p class="erro-geral" id="fp-erro" role="alert" hidden></p>
         <label class="consentimento"><input type="checkbox" id="autoriza" ${S.autoriza ? 'checked' : ''}>
           <span><strong>Quero ser encontrado por garagens.</strong> Autorizo que garagens cadastradas e aprovadas, com carros parecidos com a minha busca, vejam meu nome e WhatsApp e entrem em contato comigo. Posso desmarcar quando quiser.</span></label>
         <div class="acoes"><button class="btn grande" type="submit">Salvar preferências</button>
@@ -252,10 +257,15 @@
         ${CF.push.cartao('Avisos no celular', 'Receba uma notificação quando entrar um carro parecido com a sua busca.')}</section>`,
       bind() {
         const f = document.getElementById('fp'); ligaRegiao(f); CF.push.liga();
-        f.onsubmit = async e => { e.preventDefault(); S.busca = lerForm(f);
+        f.onsubmit = async e => { e.preventDefault();
+          const novo = lerForm(f), problema = CF.val.filtros(novo), box = document.getElementById('fp-erro');
+          if (problema) { box.textContent = problema; box.hidden = false; box.scrollIntoView?.({ block: 'center', behavior: 'smooth' }); return; }
+          box.hidden = true; S.busca = novo;
           const quer = document.getElementById('autoriza').checked;
           if (quer && !S.autoriza) S.autorizadoEm = new Date().toISOString();
-          S.autoriza = quer; await CF.salvaPrefs(); CF.toast('Preferências salvas!'); location.hash = '#/voce'; };
+          S.autoriza = quer;
+          try { await CF.salvaPrefs(); } catch (err) { CF.toastErro(err); return; }
+          CF.toast('Preferências salvas!'); location.hash = '#/voce'; };
       }
     };
   };
@@ -293,12 +303,12 @@
     return {
       html: `<section class="pagina detalhe"><a class="voltar" href="#/">← Carros</a>
         <div class="galeria">${fotos.length ? fotos.map(u => `<img src="${esc(u)}" alt="" loading="lazy">`).join('') : `<div class="ph grande" style="--c:${COR[v.cor] ?? '#cfd8d4'}">${CARRO_SVG}<span>Foto em breve</span></div>`}</div>
-        <div class="cab"><div><p class="preco grande">${brl(v.preco)}</p><h1>${esc(v.marca)} ${esc(v.modelo)}</h1></div>
+        <div class="cab"><div><p class="preco grande">${brl(v.preco)}</p><h1>${esc(v.marca)} ${esc(v.modelo)}</h1>${CF.seloConf(v) ? `<p>${CF.seloConf(v)}</p>` : ''}</div>
           <button class="fav em-linha ${fav ? 'on' : ''}" data-acao="fav" data-id="${v.id}" aria-label="Favoritar" aria-pressed="${fav}">${CF.ico('heart')}</button></div>
         ${pct != null ? `<p class="match-linha">Combina ${pct}% com o que você procura</p>` : ''}
         <dl class="specs">${spec('Ano', v.ano)}${spec('Km', num(v.km))}${spec('Câmbio', v.cambio)}${spec('Combustível', v.combustivel)}${spec('Tipo', v.tipo)}${spec('Cor', v.cor || '—')}</dl>
         ${v.descricao ? `<p class="descricao">${esc(v.descricao)}</p>` : ''}
-        <div class="card garagem"><p class="meta">Anunciado por</p><h3>${esc(g.nome ?? 'Garagem')}</h3><p class="meta">${CF.ico('pin', 'peq')} ${esc(v.cidade)}/${esc(v.uf)}</p>
+        <div class="card garagem"><p class="meta">Anunciado por</p><h3>${esc(g.nome ?? 'Garagem')} ${g.demo === false ? `<span class="verif" title="Garagem com CNPJ verificado">${CF.ico('check', 'peq')}Verificada</span>` : ''}</h3><p class="meta">${CF.ico('pin', 'peq')} ${esc(v.cidade)}/${esc(v.uf)}</p>
           <div class="acoes">${botoesContato(S.telG[v.garagem_id], msg)}</div></div>
         <div class="card cta">${acao}</div>
         <div class="aviso">${CF.ico('info', 'peq')} Antes de fechar: peça laudo cautelar e consulte débitos. <a href="#/guia">Ver guia</a> · <a href="#/simulador?valor=${Math.round(v.preco)}">Simular financiamento</a></div></section>`
@@ -313,7 +323,7 @@
       veiculo_id: +el.dataset.id, comprador_id: S.user.id, nome: S.perfil.nome, telefone: S.perfil.telefone,
       mensagem: (document.getElementById('msg-int')?.value ?? '').trim().slice(0, 300)
     });
-    if (error && error.code !== '23505') { el.disabled = false; CF.toast('Não foi possível enviar. Tente de novo.'); return; }
+    if (error && error.code !== '23505') { el.disabled = false; CF.toastErro(error); return; }
     S.enviados.add(+el.dataset.id); CF.toast('Interesse enviado!'); CF.render();
   };
   CF.acoes.retiraInteresse = async el => {

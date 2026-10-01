@@ -30,8 +30,10 @@
         <button class="btn grande sec" id="a-google" type="button">Continuar com Google</button>
         <p class="meta ou">ou use e-mail e senha</p>
         <form class="form" id="a-form">
-          <label class="campo">E-mail<input type="email" id="a-email" autocomplete="email" required></label>
-          <label class="campo">Senha<input type="password" id="a-senha" autocomplete="current-password" minlength="8" required></label>
+          <label class="campo">E-mail<input type="email" name="email" id="a-email" autocomplete="email" inputmode="email" maxlength="254"></label>
+          <label class="campo">Senha<input type="password" name="senha" id="a-senha" autocomplete="current-password" maxlength="72"><small class="dica" id="a-dica" hidden>Mínimo 8 caracteres, com letras e números.</small></label>
+          <label class="campo" id="a-conf-l" hidden>Confirmar senha<input type="password" name="conf" id="a-conf" autocomplete="new-password" maxlength="72"></label>
+          <label class="mostrar"><input type="checkbox" id="a-ver"> Mostrar senha</label>
           <button class="btn grande" id="a-ok" type="submit">Entrar</button></form>
         <button class="btn-link" id="a-troca" type="button">Não tem conta? Criar conta</button>
         <button class="btn-link" id="a-esqueci" type="button">Esqueci a senha</button>
@@ -46,25 +48,37 @@
           $('a-ok').textContent = criar ? 'Criar conta' : 'Entrar';
           $('a-troca').textContent = criar ? 'Já tem conta? Entrar' : 'Não tem conta? Criar conta';
           $('a-senha').autocomplete = criar ? 'new-password' : 'current-password'; msg('');
+          $('a-conf-l').hidden = !criar; $('a-dica').hidden = !criar; CF.limpaErros($('a-form'));
         };
+        $('a-ver').onchange = e => { $('a-senha').type = $('a-conf').type = e.target.checked ? 'text' : 'password'; };
         $('a-google').onclick = async () => {
           const { error } = await CF.sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: volta() } });
           if (error) msg('Login com Google indisponível no momento.');
         };
         $('a-esqueci').onclick = async () => {
-          const email = $('a-email').value.trim();
-          if (!email) { msg('Digite seu e-mail acima e toque de novo em "Esqueci a senha".'); return; }
-          await CF.sb.auth.resetPasswordForEmail(email, { redirectTo: volta() });
-          msg('Se esse e-mail tiver conta, enviaremos um link para criar uma nova senha.');
+          const r = CF.val.email($('a-email').value);
+          if (r.erro) { CF.erroCampo($('a-form'), 'email', r.erro); $('a-email').focus(); msg('Digite um e-mail válido acima e toque de novo em "Esqueci a senha".'); return; }
+          try { await CF.sb.auth.resetPasswordForEmail(r.ok, { redirectTo: volta() }); msg('Se esse e-mail tiver conta, enviaremos um link para criar uma nova senha.'); }
+          catch (e) { msg(CF.msgErro(e)); }
         };
         $('a-form').onsubmit = async e => {
-          e.preventDefault();
-          const email = $('a-email').value.trim(), password = $('a-senha').value;
+          e.preventDefault(); msg('');
+          const v = CF.validar($('a-form'), [
+            ['email', x => CF.val.email(x)],
+            ['senha', (x, a) => criar ? CF.val.senha(x, a.email) : (x ? { ok: x } : { erro: 'Informe a senha.' })],
+            ...(criar ? [['conf', (x, a) => x === $('a-senha').value ? { ok: x } : { erro: 'As senhas não são iguais.' }]] : [])
+          ]);
+          if (!v) return;
+          const email = v.email, password = v.senha;
+          if ($('a-ok').disabled) return;
           $('a-ok').disabled = true; msg('Aguarde…');
-          const r = criar ? await CF.sb.auth.signUp({ email, password, options: { emailRedirectTo: volta() } })
-                          : await CF.sb.auth.signInWithPassword({ email, password });
+          let r;
+          try {
+            r = criar ? await CF.sb.auth.signUp({ email, password, options: { emailRedirectTo: volta() } })
+                      : await CF.sb.auth.signInWithPassword({ email, password });
+          } catch (err) { r = { error: err }; }
           $('a-ok').disabled = false;
-          if (r.error) { msg(CF.traduzErro(r.error)); return; }
+          if (r.error) { msg(CF.msgErro(r.error)); return; }
           if (criar && !r.data.session) { msg('Enviamos um e-mail de confirmação. Confirme para entrar.'); return; }
           location.hash = '#/';
         };
@@ -76,13 +90,17 @@
     if (!S.user) return { html: '<section class="pagina vazio"><p>Link expirado.</p><a class="btn" href="#/entrar">Voltar ao login</a></section>' };
     return {
       html: `<section class="pagina estreita"><h2>Nova senha</h2><form class="form" id="n-form">
-        <label class="campo">Nova senha<input type="password" id="n-senha" autocomplete="new-password" minlength="8" required></label>
+        <label class="campo">Nova senha<input type="password" name="senha" id="n-senha" autocomplete="new-password" maxlength="72"><small class="dica">Mínimo 8 caracteres, com letras e números.</small></label>
+        <label class="campo">Confirmar nova senha<input type="password" name="conf" autocomplete="new-password" maxlength="72"></label>
         <button class="btn grande" type="submit">Salvar senha</button></form><p class="meta" id="n-msg" role="status"></p></section>`,
       bind() {
         $('n-form').onsubmit = async e => {
-          e.preventDefault();
-          const { error } = await CF.sb.auth.updateUser({ password: $('n-senha').value });
-          $('n-msg').textContent = error ? CF.traduzErro(error) : 'Senha alterada!';
+          e.preventDefault(); $('n-msg').textContent = '';
+          const f = $('n-form');
+          const v = CF.validar(f, [['senha', x => CF.val.senha(x)], ['conf', x => x === f.elements.senha.value ? { ok: x } : { erro: 'As senhas não são iguais.' }]]);
+          if (!v) return;
+          let error; try { ({ error } = await CF.sb.auth.updateUser({ password: v.senha })); } catch (err) { error = err; }
+          $('n-msg').textContent = error ? CF.msgErro(error) : 'Senha alterada!';
           if (!error) setTimeout(() => { location.hash = '#/conta'; }, 800);
         };
       }
@@ -101,10 +119,10 @@
           <fieldset ${p ? 'disabled' : ''}><legend>Eu sou</legend><div class="seg grande" role="radiogroup">
             <label><input type="radio" name="papel" value="comprador" ${papel === 'comprador' ? 'checked' : ''}><span>Cliente<small>Quero encontrar um carro</small></span></label>
             <label><input type="radio" name="papel" value="garagista" ${papel === 'garagista' ? 'checked' : ''}><span>Garagista<small>Quero anunciar carros</small></span></label></div></fieldset>
-          <label class="campo">Seu nome<input name="nome" required minlength="2" maxlength="80" autocomplete="name" value="${esc(p?.nome ?? '')}"></label>
-          <label class="campo">WhatsApp com DDD<input name="telefone" required inputmode="tel" autocomplete="tel" placeholder="(48) 99999-9999" value="${esc(tel)}"></label>
+          <label class="campo">Seu nome<input name="nome" maxlength="80" autocomplete="name" value="${esc(p?.nome ?? '')}"></label>
+          <label class="campo">WhatsApp com DDD<input name="telefone" data-mask="tel" inputmode="tel" autocomplete="tel" maxlength="16" placeholder="(48) 99999-9999" value="${esc(tel)}"></label>
           <div class="so-garagista"><label class="campo">Nome da garagem/loja<input name="loja" maxlength="80" value="${esc(g?.nome ?? '')}"></label>
-            <label class="campo">CNPJ<input name="cnpj" inputmode="numeric" maxlength="18" placeholder="00.000.000/0000-00" value="${esc(fmtCnpj(S.priv?.cnpj))}"></label>
+            <label class="campo">CNPJ<input name="cnpj" data-mask="cnpj" inputmode="numeric" maxlength="18" placeholder="00.000.000/0000-00" value="${esc(fmtCnpj(S.priv?.cnpj))}"></label>
             <p class="meta">Só garagens aprovadas anunciam e veem clientes. Analisamos o cadastro antes de liberar.</p></div>
           <div class="dupla"><label class="campo">Cidade<input name="cidade" maxlength="60" autocomplete="address-level2" value="${esc(p?.cidade ?? g?.cidade ?? '')}"></label>
             <label class="campo">UF<select name="uf"><option value="">—</option>${opt(UFS, p?.uf ?? g?.uf)}</select></label></div>
@@ -116,26 +134,35 @@
         f.addEventListener('change', troca); troca();
         f.onsubmit = async e => {
           e.preventDefault(); const msg = t => { $('pf-msg').textContent = t; };
-          const d = Object.fromEntries(new FormData(f));
-          const papelSel = p?.papel ?? d.papel;
-          const telefone = CF.normTel(d.telefone);
-          if (!telefone) { msg('Informe um WhatsApp válido com DDD.'); return; }
-          if (papelSel === 'garagista' && (!d.loja?.trim() || !d.cidade?.trim() || !d.uf)) { msg('Garagistas precisam informar loja, cidade e UF.'); return; }
-          const cnpj = soDigitos(d.cnpj);
-          if (papelSel === 'garagista' && !validaCNPJ(cnpj)) { msg('Informe um CNPJ válido.'); return; }
+          msg('');
+          const papelSel = p?.papel ?? f.elements.papel.value;
+          const gar = papelSel === 'garagista';
+          const v = CF.validar(f, [
+            ['nome', x => CF.val.nome(x)],
+            ['telefone', x => CF.val.telefone(x)],
+            ...(gar ? [['loja', x => CF.val.texto(x, { min: 2, max: 80, rotulo: 'o nome da garagem' })], ['cnpj', x => CF.val.cnpj(x)]] : []),
+            ['cidade', x => CF.val.texto(x, { max: 60, rotulo: 'a cidade', obrigatorio: gar })],
+            ['uf', x => CF.val.uf(x, gar)]
+          ]);
+          if (!v) return;
+          if ($('pf-ok').disabled) return;
+          const telefone = v.telefone, cnpj = v.cnpj;
           $('pf-ok').disabled = true; msg('Salvando…');
-          const perfil = { id: S.user.id, papel: papelSel, nome: d.nome.trim(), telefone, cidade: d.cidade.trim() || null, uf: d.uf || null };
-          let r = await CF.sb.from('perfis').upsert(perfil);
+          let r;
+          try {
+          const perfil = { id: S.user.id, papel: papelSel, nome: v.nome, telefone, cidade: v.cidade, uf: v.uf };
+          r = await CF.sb.from('perfis').upsert(perfil);
           if (!r.error && papelSel === 'garagista') {
-            const gar = { owner_id: S.user.id, nome: d.loja.trim(), cidade: d.cidade.trim(), uf: d.uf };
-            const { owner_id, ...alt } = gar;
+            const gdados = { owner_id: S.user.id, nome: v.loja, cidade: v.cidade, uf: v.uf };
+            const { owner_id, ...alt } = gdados;
             const gr = S.garagem ? await CF.sb.from('garagens').update(alt).eq('id', S.garagem.id).select('id').single()
-                                 : await CF.sb.from('garagens').insert(gar).select('id').single();
+                                 : await CF.sb.from('garagens').insert(gdados).select('id').single();
             r = gr.error ? gr : await CF.sb.from('garagem_contatos').upsert({ garagem_id: gr.data.id, telefone });
             if (!r.error) r = await CF.sb.from('garagem_privado').upsert({ garagem_id: gr.data.id, cnpj });
           }
+          } catch (err) { r = { error: err }; }
           $('pf-ok').disabled = false;
-          if (r.error) { msg('Não foi possível salvar. Confira os dados e tente de novo.'); return; }
+          if (r.error) { msg(CF.msgErro(r.error)); return; }
           const novo = !p; CF.store.set('cf_papel_hint', null);
           await CF.recarregaConta(); CF.toast('Perfil salvo!');
           location.hash = papelSel === 'garagista' ? '#/painel' : (novo ? '#/preferencias' : '#/conta');
@@ -192,7 +219,7 @@
       const li = porV[x.id] ?? { t: 0, n: 0 };
       return `<article class="card veic horiz">
         <a class="foto" href="#/carro/${x.id}">${CF.fotoHtml(x)}</a>
-        <div class="corpo"><p class="preco">${brl(x.preco)}</p><h3>${esc(x.marca)} ${esc(x.modelo)} <span class="meta">${x.ano}</span></h3>
+        <div class="corpo"><p class="preco">${brl(x.preco)}</p><h3>${esc(x.marca)} ${esc(x.modelo)} <span class="meta">${x.ano}</span>${CF.seloConf(x)}</h3>
           <p class="meta">${matches[i]} cliente${matches[i] === 1 ? '' : 's'} buscando algo assim · ${li.t} interessado${li.t === 1 ? '' : 's'}${li.n ? ` (<strong>${li.n} novo${li.n === 1 ? '' : 's'}</strong>)` : ''}</p>
           <div class="acoes-linha"><select data-status="${x.id}" aria-label="Status">${['ativo', 'pausado', 'vendido'].map(s => `<option value="${s}" ${x.status === s ? 'selected' : ''}>${s[0].toUpperCase() + s.slice(1)}</option>`).join('')}</select>
             <a class="btn sec peq" href="#/veiculo/${x.id}/editar">Editar</a>
@@ -250,6 +277,7 @@
     img.onload = () => {
       const k = Math.min(1, 1280 / Math.max(img.width, img.height)), c = document.createElement('canvas');
       c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      if (Math.max(img.width, img.height) < 480) { URL.revokeObjectURL(url); err(new Error('imagem_pequena')); return; }
       c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
       c.toBlob(b => b ? ok(b) : err(new Error('falha')), 'image/jpeg', 0.82);
     };
@@ -270,62 +298,120 @@
       v = (await CF.sb.from('veiculos').select('*').eq('id', +arg).eq('garagem_id', S.garagem.id).maybeSingle()).data;
       if (!v) return { html: '<section class="pagina vazio"><p>Veículo não encontrado.</p><a class="btn" href="#/painel">Voltar</a></section>' };
     }
+    const placaAtual = edit ? ((await CF.sb.from('veiculo_placas').select('placa').eq('veiculo_id', v.id).maybeSingle()).data?.placa ?? '') : '';
+    const exigePlaca = S.garagem.demo !== true;
     fotosForm = (v.fotos ?? []).map(p => ({ path: p, url: CF.fotoUrl(p) })).filter(f => f.url);
     const val = k => esc(v[k] ?? '');
     const anoMax = new Date().getFullYear() + 1;
     return {
       html: `<section class="pagina estreita"><a class="voltar" href="#/painel">← Meus veículos</a><h2>${edit ? 'Editar veículo' : 'Novo veículo'}</h2>
         <form class="form" id="vf">
-          <div class="dupla"><label class="campo">Marca<input name="marca" list="marcas" required maxlength="40" value="${val('marca')}"></label>
-            <label class="campo">Modelo<input name="modelo" required maxlength="60" placeholder="Ex.: Onix 1.0 LT" value="${val('modelo')}"></label></div>
+          <div class="campo-placa"><label class="campo">Placa${exigePlaca ? '' : ' (opcional)'}<input name="placa" data-mask="placa" maxlength="8" autocapitalize="characters" autocomplete="off" placeholder="ABC-1D23" value="${esc(CF.mascara.placa(placaAtual))}"></label>
+            <button class="btn sec" type="button" id="placa-ok">Consultar placa</button></div>
+          <div id="placa-res" class="placa-res" role="status" aria-live="polite" hidden></div>
+          <div class="dupla"><label class="campo">Marca<input name="marca" list="marcas" maxlength="40" value="${val('marca')}"></label>
+            <label class="campo">Modelo<input name="modelo" maxlength="60" placeholder="Ex.: Onix 1.0 LT" value="${val('modelo')}"></label></div>
           <datalist id="marcas">${MARCAS.map(m => `<option value="${m}">`).join('')}</datalist>
-          <div class="dupla"><label class="campo">Ano<input name="ano" type="number" inputmode="numeric" required min="1970" max="${anoMax}" value="${val('ano')}"></label>
-            <label class="campo">Km<input name="km" type="number" inputmode="numeric" required min="0" value="${val('km')}"></label></div>
-          <label class="campo">Valor (R$)<input name="preco" type="number" inputmode="decimal" required min="1" step="any" value="${val('preco')}"></label>
+          <div class="dupla"><label class="campo">Ano<input name="ano" inputmode="numeric" maxlength="4" placeholder="${anoMax - 1}" value="${val('ano')}"></label>
+            <label class="campo">Km<input name="km" inputmode="numeric" maxlength="7" placeholder="Ex.: 48000" value="${val('km')}"></label></div>
+          <label class="campo">Valor (R$)<input name="preco" inputmode="decimal" placeholder="Ex.: 42.900" value="${v.preco != null ? esc(Number(v.preco).toLocaleString('pt-BR', { maximumFractionDigits: 2 })) : ''}"></label>
           <div class="dupla"><label class="campo">Câmbio<select name="cambio">${opt(['Manual', 'Automático'], v.cambio)}</select></label>
             <label class="campo">Combustível<select name="combustivel">${opt(COMBUSTIVEIS, v.combustivel ?? 'Flex')}</select></label></div>
           <div class="dupla"><label class="campo">Tipo<select name="tipo">${opt(TIPOS, v.tipo)}</select></label>
             <label class="campo">Cor<input name="cor" maxlength="30" value="${val('cor')}"></label></div>
-          <div class="dupla"><label class="campo">Cidade<input name="cidade" required maxlength="60" value="${esc(v.cidade ?? S.garagem.cidade)}"></label>
+          <div class="dupla"><label class="campo">Cidade<input name="cidade" maxlength="60" value="${esc(v.cidade ?? S.garagem.cidade)}"></label>
             <label class="campo">UF<select name="uf">${opt(UFS, v.uf ?? S.garagem.uf)}</select></label></div>
           <label class="campo">Descrição<textarea name="descricao" rows="4" maxlength="1000" placeholder="Estado, revisões, documentação, acessórios…">${val('descricao')}</textarea></label>
-          <fieldset><legend>Fotos <span class="meta" id="fotos-n"></span></legend>
+          <fieldset data-campo="fotos"><legend>Fotos <span class="meta" id="fotos-n"></span></legend>
             <div class="thumbs" id="thumbs"></div>
             <label class="btn sec">Adicionar fotos<input type="file" id="arq" accept="image/jpeg,image/png,image/webp" multiple hidden></label></fieldset>
-          ${edit ? `<label class="campo">Status<select name="status">${['ativo', 'pausado', 'vendido'].map(s => `<option value="${s}" ${v.status === s ? 'selected' : ''}>${s[0].toUpperCase() + s.slice(1)}</option>`).join('')}</select></label>` : ''}
+          <label class="campo">Status<select name="status">${(edit ? ['ativo', 'pausado', 'vendido'] : ['ativo', 'pausado']).map(s => `<option value="${s}" ${(v.status ?? 'ativo') === s ? 'selected' : ''}>${{ ativo: 'Ativo (aparece no catálogo)', pausado: 'Pausado (rascunho)', vendido: 'Vendido' }[s]}</option>`).join('')}</select><small class="dica">Anúncio ativo precisa de ao menos 1 foto.</small></label>
           <button class="btn grande" type="submit" id="vf-ok">${edit ? 'Salvar alterações' : 'Publicar anúncio'}</button></form><p class="meta" id="vf-msg" role="status"></p></section>`,
       bind() {
         pintaFotos();
+        $('placa-ok').onclick = async () => {
+          const f = $('vf'), box = $('placa-res'); CF.limpaErros(f);
+          const x = CF.validar(f, [['placa', t => CF.val.placa(t)]]); if (!x) return;
+          const btn = $('placa-ok'); btn.disabled = true; btn.textContent = 'Consultando…'; box.hidden = true;
+          try {
+            const r = await CF.sb.functions.invoke('consulta_placa', { body: { placa: x.placa } });
+            if (r.error) { let c = ''; try { c = (await r.error.context.json()).erro; } catch { /* sem corpo */ } throw new Error(c || r.error.message); }
+            const d = r.data.dados, titulo = s => String(s ?? '').toLowerCase().replace(/(^|\s)(\p{L})/gu, (_, a, b) => a + b.toUpperCase());
+            const marca = MARCAS.find(m => m.toLowerCase() === String(d.marca).toLowerCase()) ?? titulo(d.marca);
+            box.innerHTML = `<p><strong>${esc(marca)} ${esc(d.modelo)}</strong><br><span class="meta">Fabricação ${esc(d.ano_fabricacao)} · modelo ${esc(d.ano_modelo)} · ${esc(titulo(d.cor))} · ${esc(d.combustivel)}</span></p>
+              ${r.data.simulado ? '<p class="meta"><strong>Consulta de teste</strong>: dados fictícios, não geram o selo “Dados conferidos”.</p>' : '<p class="meta">Se os dados do anúncio baterem com estes, ele recebe o selo “Dados conferidos”.</p>'}
+              <button class="btn sec peq" type="button" id="placa-usa">Usar estes dados</button>`;
+            box.hidden = false;
+            $('placa-usa').onclick = () => {
+              const el = f.elements; el.marca.value = marca; el.modelo.value = d.modelo; el.ano.value = d.ano_modelo; el.cor.value = titulo(d.cor);
+              if (COMBUSTIVEIS.includes(d.combustivel)) el.combustivel.value = d.combustivel;
+              CF.limpaErros(f); CF.toast('Dados preenchidos. Confira e ajuste o que precisar.');
+            };
+          } catch (err) { CF.erroCampo(f, 'placa', CF.msgErro(err)); }
+          btn.disabled = false; btn.textContent = 'Consultar placa';
+        };
         $('arq').onchange = async e => {
           for (const file of [...e.target.files]) {
             if (fotosForm.length >= 6) { CF.toast('Máximo de 6 fotos.'); break; }
-            try { const blob = await comprime(file); fotosForm.push({ blob, url: URL.createObjectURL(blob) }); } catch { CF.toast('Uma das imagens não pôde ser lida.'); }
+            if (!/^image\/(jpeg|png|webp)$/.test(file.type)) { CF.toast(`"${file.name.slice(0, 24)}" não é JPG, PNG ou WebP.`); continue; }
+            if (file.size > 20 * 1024 * 1024) { CF.toast(`"${file.name.slice(0, 24)}" é muito grande (máx. 20 MB).`); continue; }
+            try { const blob = await comprime(file); fotosForm.push({ blob, url: URL.createObjectURL(blob) }); CF.limpaErros($('vf')); }
+            catch (err) { CF.toast(err.message === 'imagem_pequena' ? `"${file.name.slice(0, 24)}" é muito pequena (mínimo 480 px).` : 'Uma das imagens não pôde ser lida.'); }
           }
           e.target.value = ''; pintaFotos();
         };
         $('vf').onsubmit = async e => {
           e.preventDefault(); const msg = t => { $('vf-msg').textContent = t; };
-          const d = Object.fromEntries(new FormData($('vf')));
-          const dados = { marca: d.marca.trim(), modelo: d.modelo.trim(), ano: +d.ano, km: +d.km, preco: +d.preco, cambio: d.cambio, combustivel: d.combustivel,
-            tipo: d.tipo, cor: d.cor.trim() || null, cidade: d.cidade.trim(), uf: d.uf, descricao: d.descricao.trim() };
-          if (edit) dados.status = d.status;
+          msg('');
+          const f = $('vf');
+          const x = CF.validar(f, [
+            ['placa', t => CF.val.placa(t, exigePlaca)],
+            ['marca', t => CF.val.texto(t, { max: 40, rotulo: 'a marca' })],
+            ['modelo', t => CF.val.texto(t, { max: 60, rotulo: 'o modelo' })],
+            ['ano', t => CF.val.inteiro(t, { min: CF.val.ANO_MIN, max: CF.val.ANO_MAX, rotulo: 'o ano', milhar: false })],
+            ['km', t => CF.val.inteiro(t, { min: 0, max: CF.val.KM_MAX, rotulo: 'a quilometragem' })],
+            ['preco', t => CF.val.reais(t, { min: CF.val.PRECO_MIN, max: CF.val.PRECO_MAX, rotulo: 'valor' })],
+            ['cidade', t => CF.val.texto(t, { max: 60, rotulo: 'a cidade' })],
+            ['uf', t => CF.val.uf(t)],
+            ['cor', t => CF.val.texto(t, { max: 30, rotulo: 'a cor', obrigatorio: false })],
+            ['descricao', t => CF.val.texto(t, { max: 1000, rotulo: 'a descrição', obrigatorio: false })],
+            ['status', t => ['ativo', 'pausado', 'vendido'].includes(t) ? { ok: t } : { erro: 'Status inválido.' }],
+            ['fotos', (_, a) => a.status === 'ativo' && fotosForm.length === 0 ? { erro: 'Adicione ao menos 1 foto para publicar, ou escolha o status Pausado.' } : { ok: true }]
+          ]);
+          if (!x) return;
+          const dados = { marca: x.marca, modelo: x.modelo, ano: x.ano, km: x.km, preco: x.preco, cambio: f.elements.cambio.value, combustivel: f.elements.combustivel.value,
+            tipo: f.elements.tipo.value, cor: x.cor, cidade: x.cidade, uf: x.uf, descricao: x.descricao ?? '', status: x.status };
+          if ($('vf-ok').disabled) return;
           $('vf-ok').disabled = true; msg('Enviando…');
+          const enviadas = []; let conferido = false;
           try {
             const fotos = [];
-            for (const f of fotosForm) {
-              if (f.path) { fotos.push(f.path); continue; }
+            for (const ft of fotosForm) {
+              if (ft.path) { fotos.push(ft.path); continue; }
               const path = `${S.garagem.id}/${crypto.randomUUID()}.jpg`;
-              const up = await CF.sb.storage.from('veiculos').upload(path, f.blob, { contentType: 'image/jpeg' });
-              if (up.error) throw up.error; fotos.push(path);
+              const up = await CF.sb.storage.from('veiculos').upload(path, ft.blob, { contentType: 'image/jpeg' });
+              if (up.error) throw up.error; fotos.push(path); enviadas.push(path);
             }
             dados.fotos = fotos;
             const r = edit ? await CF.sb.from('veiculos').update(dados).eq('id', v.id)
-                           : await CF.sb.from('veiculos').insert({ ...dados, garagem_id: S.garagem.id });
+                           : await CF.sb.from('veiculos').insert({ ...dados, garagem_id: S.garagem.id }).select('id').single();
             if (r.error) throw r.error;
+            if (x.placa) {
+              const idV = edit ? v.id : r.data.id;
+              const p = await CF.sb.rpc('definir_placa_veiculo', { p_veiculo: idV, p_placa: x.placa });
+              if (p.error) {
+                if (!edit) { await CF.sb.from('veiculos').delete().eq('id', idV); throw Object.assign(p.error, { placaErro: true }); }
+                throw p.error;
+              }
+              conferido = p.data === true;
+            }
             const removidas = (v.fotos ?? []).filter(p => !fotos.includes(p));
             if (removidas.length) CF.sb.storage.from('veiculos').remove(removidas);
-          } catch { $('vf-ok').disabled = false; msg('Não foi possível salvar. Confira os dados e tente de novo.'); return; }
-          S.veiculos = null; CF.toast(edit ? 'Anúncio atualizado!' : 'Anúncio publicado!'); location.hash = '#/painel';
+          } catch (err) {
+            if (enviadas.length) CF.sb.storage.from('veiculos').remove(enviadas).catch(() => {}); // não deixa foto órfã
+            $('vf-ok').disabled = false; msg(CF.msgErro(err)); return;
+          }
+          S.veiculos = null; CF.toast((edit ? 'Anúncio atualizado!' : 'Anúncio publicado!') + (conferido ? ' Dados conferidos ✓' : '')); location.hash = '#/painel';
         };
       }
     };
