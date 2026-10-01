@@ -27,6 +27,7 @@
     }
     if (meu !== tok) return; // outra navegação começou
     app.innerHTML = r.html; app.removeAttribute('aria-busy');
+    app.querySelectorAll('form').forEach(f => { f.noValidate = true; }); // as mensagens de validação são as do app, não as do navegador
     r.bind?.();
     const ativa = { carro: 'carros', veiculo: 'painel', preferencias: 'voce', favoritos: '', simulador: 'guia', perfil: 'conta', 'nova-senha': 'conta', admin: 'conta', assinatura: 'conta' }[chave] ?? chave;
     document.getElementById('abas').innerHTML = navItens().map(([h, k, i, t]) =>

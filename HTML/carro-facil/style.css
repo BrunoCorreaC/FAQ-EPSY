@@ -232,3 +232,15 @@ details.editar .form { margin-top: 8px; }
 }
 .match { background: #24331f; } .match.alto { background: var(--accent); }
 @media (prefers-color-scheme: dark) { .fav.em-linha { color: #b4c2b0; } .fav.em-linha.on { color: #ff7a99; } }
+
+/* validação e erros */
+.erro { display: block; color: var(--danger-txt); font-size: .86rem; font-weight: 600; margin-top: 3px; }
+[aria-invalid="true"] { border-color: var(--danger-txt) !important; box-shadow: 0 0 0 1px var(--danger-txt); }
+.erro-geral { background: #fde8e6; color: #7a1a12; border-radius: 12px; padding: 10px 14px; margin: 8px 20px 0; font-weight: 600; font-size: .92rem; }
+.erro-geral[hidden] { display: none; } form .erro-geral { margin: 0 0 10px; }
+@media (prefers-color-scheme: dark) { .erro-geral { background: #4a1f1b; color: #ffd6d1; } }
+.dica { display: block; color: var(--mut); font-size: .82rem; font-weight: 400; margin-top: 2px; } .mostrar { display: flex; gap: 8px; align-items: center; font-size: .9rem; color: var(--mut); min-height: 36px; }
+.mostrar input { width: 20px; min-height: 20px; accent-color: var(--brand); }
+#offline { background: #7a4a00; color: #fff; text-align: center; padding: 8px 16px; font-size: .9rem; font-weight: 600; position: sticky; top: 0; z-index: 70; }
+.verif { display: inline-flex; align-items: center; gap: 3px; background: var(--brand-soft); color: var(--brand-txt); border-radius: 99px; padding: 0 8px; font-size: .72rem; font-weight: 700; vertical-align: middle; white-space: nowrap; }
+.verif .ico.peq { width: 12px; height: 12px; margin: 0; }

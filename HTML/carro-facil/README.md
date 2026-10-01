@@ -36,6 +36,14 @@ Garagem aprovada só anuncia e vê clientes com **assinatura mensal** em dia (ou
 - O garagista vê a própria situação em `#/assinatura` (plano, próxima cobrança, últimas cobranças e como pagar) e recebe push de nova mensalidade, atraso e suspensão.
 - **Recebimento:** por enquanto o admin confirma o pagamento (Pix/boleto/dinheiro). Cobrança automática em cartão ou débito exige contratar um provedor (Asaas, Mercado Pago, Stripe…); as tabelas já têm `gateway`/`gateway_ref`.
 
+## Validações e diferenciais
+
+- **Cliente e garagista**: nome, telefone (DDD e formato BR), e-mail, senha (8+ com letra e número), CNPJ (dígitos verificadores), UF, anos, preços e km são validados na tela, com erro ao lado do campo, e novamente no banco (`supabase/005_validacoes.sql`).
+- **Busca salva** (`preferencias.busca`) é validada no banco para que um JSON inválido não quebre o match de ninguém.
+- **Anúncio ativo exige foto** e fotos só na pasta da própria garagem (`006_foto_obrigatoria.sql`).
+- **Erros** de rede/sessão/banco aparecem em português (`CF.msgErro`), com aviso de offline.
+- **Diferenciais**: selo "Verificada" (CNPJ aprovado), demanda qualificada com consentimento (LGPD), só garagistas aprovados e em dia anunciam.
+
 ## Backend (Supabase)
 Projeto `carro-facil` (ref `idqaecjrakbrpatgvczq`, sa-east-1). Chaves públicas em `js/config.js`.
 SQL: `supabase/schema.sql` (login/preferências/despachantes), `002_marketplace.sql` (perfis, garagens, veículos, interesses, fotos), `003_negocio.sql` (aprovação, consentimento, leads/créditos, radar, push) e `004_assinaturas.sql` (planos, assinaturas, cobranças, rotina diária). Função de push: `supabase/functions/notificar` (verify_jwt desligado; autenticada por segredo compartilhado em `config_privada`).

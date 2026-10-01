@@ -60,8 +60,9 @@
   CF.salvaPrefs = async () => {
     CF.guardaLocal();
     if (!sb || !S.user) return;
-    await sb.from('preferencias').upsert({ user_id: S.user.id, favoritos: S.favs, passos: S.checks, busca: S.busca,
+    const { error } = await sb.from('preferencias').upsert({ user_id: S.user.id, favoritos: S.favs, passos: S.checks, busca: S.busca,
       autoriza_contato: S.autoriza, autorizado_em: S.autoriza ? (S.autorizadoEm ?? (S.autorizadoEm = new Date().toISOString())) : null, atualizado_em: new Date().toISOString() });
+    if (error) throw error;
   };
 
   // catálogo público (veículos ativos + garagens)
@@ -70,7 +71,7 @@
     if (!sb) throw new Error('sem-supabase');
     const [v, g] = await Promise.all([
       sb.from('veiculos').select('*').eq('status', 'ativo').order('criado_em', { ascending: false }).limit(500),
-      sb.from('garagens').select('id,nome,cidade,uf')
+      sb.from('garagens').select('id,nome,cidade,uf,demo')
     ]);
     if (v.error || g.error) throw (v.error || g.error);
     S.veiculos = v.data ?? [];
