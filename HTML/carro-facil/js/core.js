@@ -42,7 +42,7 @@
   const S = CF.s = {
     user: null, perfil: null, garagem: null, priv: null, assin: null, admin: false, autoriza: false, autorizadoEm: null,
     favs: CF.store.get('cf_favs', []), checks: CF.store.get('cf_checks', []), busca: CF.store.get('cf_busca', {}),
-    veiculos: null, garagens: {}, telG: {}, telD: {}, telsOk: false, enviados: new Set()
+    veiculos: null, ocultas: new Set(), garagens: {}, telG: {}, telD: {}, telsOk: false, enviados: new Set()
   };
   CF.papel = () => S.perfil?.papel ?? null;
 
@@ -75,20 +75,22 @@
       sb.from('garagens').select('id,nome,cidade,uf,demo')
     ]);
     if (v.error || g.error) throw (v.error || g.error);
-    S.veiculos = v.data ?? [];
+    S.veiculos = (v.data ?? []).filter(x => !S.ocultas.has(x.garagem_id));
     S.garagens = Object.fromEntries((g.data ?? []).map(x => [x.id, x]));
   };
 
   // dados da conta após o login
   const carregaConta = async () => {
     const uid = S.user.id;
-    const [p, pr, tg, td, it] = await Promise.all([
+    const [p, pr, tg, td, it, oc] = await Promise.all([
       sb.from('perfis').select('*').eq('id', uid).maybeSingle(),
       sb.from('preferencias').select('favoritos,passos,busca,autoriza_contato,autorizado_em').eq('user_id', uid).maybeSingle(),
       sb.from('garagem_contatos').select('garagem_id,telefone'),
       sb.from('contatos').select('chave,telefone'),
-      sb.from('interesses').select('veiculo_id').eq('comprador_id', uid)
+      sb.from('interesses').select('veiculo_id').eq('comprador_id', uid),
+      sb.from('garagens_ocultas').select('garagem_id')
     ]);
+    S.ocultas = new Set((oc.data ?? []).map(x => x.garagem_id)); if (S.ocultas.size) S.veiculos = null; // recarrega o catálogo sem elas
     S.perfil = p.data ?? null;
     S.garagem = null;
     S.priv = null;
@@ -118,7 +120,7 @@
     S.user = novo;
     if (novo) { try { await carregaConta(); } catch { /* segue com dados locais */ } }
     else { // não deixa dados de uma conta em aparelho compartilhado
-      Object.assign(S, { perfil: null, garagem: null, priv: null, assin: null, admin: false, autoriza: false, autorizadoEm: null, telG: {}, telD: {}, telsOk: false, enviados: new Set(), favs: [], checks: [], busca: {} });
+      Object.assign(S, { perfil: null, garagem: null, priv: null, assin: null, admin: false, autoriza: false, autorizadoEm: null, telG: {}, telD: {}, telsOk: false, enviados: new Set(), ocultas: new Set(), veiculos: null, favs: [], checks: [], busca: {} });
       CF.guardaLocal();
     }
     CF.aoMudar?.();

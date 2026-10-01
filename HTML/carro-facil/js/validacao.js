@@ -154,6 +154,8 @@
   const MAPA = [
     ['limite_anuncios', 'Você atingiu o limite de anúncios ativos do seu plano. Pause ou conclua um anúncio, ou fale com a equipe para mudar de plano.'],
     ['foto_obrigatoria', 'Anúncios ativos precisam de ao menos 1 foto. Adicione uma foto ou salve como pausado.'],
+    ['denuncia_repetida', 'Você já denunciou este anúncio. Estamos analisando.'], ['limite_denuncias', 'Você enviou muitas denúncias hoje. Tente amanhã.'],
+    ['veiculo_nao_encontrado', 'Anúncio não encontrado ou já retirado do catálogo.'], ['admin_nao_exclui', 'Contas de administrador não podem ser excluídas por aqui.'], ['denuncia_inexistente', 'Denúncia não encontrada.'], ['acao_invalida', 'Ação inválida.'],
     ['placa_duplicada', 'Você já tem um anúncio (não vendido) com esta placa.'], ['placa_invalida', 'Placa inválida. Use o formato ABC-1234 ou ABC1D23.'],
     ['limite_consultas', 'Você atingiu o limite de consultas de placa de hoje. Tente amanhã ou preencha os dados manualmente.'],
     ['provedor_indisponivel', 'A consulta de placa ainda não está disponível. Preencha os dados manualmente.'], ['provedor_falhou', 'A consulta de placa falhou agora. Tente de novo em instantes ou preencha manualmente.'],

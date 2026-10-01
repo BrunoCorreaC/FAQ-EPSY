@@ -72,3 +72,6 @@ Tudo com RLS; funções sensíveis (`SECURITY DEFINER`) checam o usuário por de
    - **Vercel:** importar o repositório com *Root Directory* `HTML/carro-facil` (site estático, sem build).
    - Push exige HTTPS nos dois.
 8. **LGPD:** revisar com advogado os textos de consentimento e a política de privacidade antes de operar com clientes reais.
+
+## Lojas (App Store / Google Play)
+Projeto Capacitor em `/mobile`, exigências das lojas em `supabase/008_lojas.sql` (exclusão de conta, denúncia, ocultar garagem, token de push) e checklist com custos em [`LANCAMENTO.md`](LANCAMENTO.md).
