@@ -25,6 +25,7 @@
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     star: '<path d="M12 3.500l2.600 5.400 5.900.8-4.300 4.100 1 5.900L12 16.900 6.800 19.700l1-5.900L3.500 9.700l5.900-.8z"/>'
   };
+  CF.seloConf = v => v?.conferido ? `<span class="verif" title="Marca, modelo e ano conferem com o registro do veículo (consulta pela placa)">${CF.ico('check', 'peq')}Dados conferidos</span>` : '';
   CF.ico = (nome, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONES[nome] ?? ''}</svg>`;
   CF.wa = (tel, msg) => `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
 

@@ -44,6 +44,14 @@ Garagem aprovada só anuncia e vê clientes com **assinatura mensal** em dia (ou
 - **Erros** de rede/sessão/banco aparecem em português (`CF.msgErro`), com aviso de offline.
 - **Diferenciais**: selo "Verificada" (CNPJ aprovado), demanda qualificada com consentimento (LGPD), só garagistas aprovados e em dia anunciam.
 
+## Placa e selo "Dados conferidos"
+
+- Campo **Placa** no anúncio (antiga `ABC-1234` ou Mercosul `ABC1D23`), obrigatório para garagens reais. Fica numa tabela privada (`veiculo_placas`): o catálogo público não a vê. Não se repete em dois anúncios não vendidos da mesma garagem.
+- Botão **Consultar placa**: a Edge Function `consulta_placa` valida garagem liberada, formato, **cota diária** (`placa_limite_dia`, padrão 30) e **cache de 30 dias** por placa, e preenche marca, modelo, ano, cor e combustível.
+- O selo **Dados conferidos** é decidido só pelo banco (`placa_confere`): a consulta precisa ser da própria garagem, de provedor real, e marca, modelo e ano do anúncio têm de bater. Mudou algum desses campos, o selo é recalculado. Não dá para forjá-lo por insert/update.
+- Provedor: `config_privada.placa_provedor` = `simulado` (padrão; dados fictícios, **nunca** gera selo). Para ativar um real, implemente `consultaProvedor` em `supabase/functions/consulta_placa/index.ts` conforme a documentação do contratado, guarde a chave nos segredos da função e mude `placa_provedor`.
+- Migração: `supabase/007_placa.sql`.
+
 ## Backend (Supabase)
 Projeto `carro-facil` (ref `idqaecjrakbrpatgvczq`, sa-east-1). Chaves públicas em `js/config.js`.
 SQL: `supabase/schema.sql` (login/preferências/despachantes), `002_marketplace.sql` (perfis, garagens, veículos, interesses, fotos), `003_negocio.sql` (aprovação, consentimento, leads/créditos, radar, push) e `004_assinaturas.sql` (planos, assinaturas, cobranças, rotina diária). Função de push: `supabase/functions/notificar` (verify_jwt desligado; autenticada por segredo compartilhado em `config_privada`).

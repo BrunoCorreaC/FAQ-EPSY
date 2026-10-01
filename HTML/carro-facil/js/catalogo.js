@@ -65,7 +65,7 @@
       <button class="fav ${fav ? 'on' : ''}" data-acao="fav" data-id="${v.id}" aria-label="Favoritar" aria-pressed="${fav}">${CF.ico('heart')}</button>
       <div class="corpo">
         <p class="preco">${brl(v.preco)}</p>
-        <h3><a href="#/carro/${v.id}">${esc(v.marca)} ${esc(v.modelo)}</a></h3>
+        <h3><a href="#/carro/${v.id}">${esc(v.marca)} ${esc(v.modelo)}</a></h3>${CF.seloConf(v) ? `<p>${CF.seloConf(v)}</p>` : ''}
         <p class="meta">${v.ano} · ${num(v.km)} km · ${esc(v.cambio)}</p>
         <p class="meta local">${CF.ico('pin', 'peq')} ${esc(v.cidade)}/${esc(v.uf)}</p>
         ${g ? `<p class="garagem-lin"><span class="avatar" aria-hidden="true">${esc((g.nome || '?')[0].toUpperCase())}</span>${esc(g.nome)}${g.demo === false ? ` <span class="verif" title="Garagem com CNPJ verificado">${CF.ico('check', 'peq')}Verificada</span>` : ''}</p>` : ''}
@@ -303,7 +303,7 @@
     return {
       html: `<section class="pagina detalhe"><a class="voltar" href="#/">← Carros</a>
         <div class="galeria">${fotos.length ? fotos.map(u => `<img src="${esc(u)}" alt="" loading="lazy">`).join('') : `<div class="ph grande" style="--c:${COR[v.cor] ?? '#cfd8d4'}">${CARRO_SVG}<span>Foto em breve</span></div>`}</div>
-        <div class="cab"><div><p class="preco grande">${brl(v.preco)}</p><h1>${esc(v.marca)} ${esc(v.modelo)}</h1></div>
+        <div class="cab"><div><p class="preco grande">${brl(v.preco)}</p><h1>${esc(v.marca)} ${esc(v.modelo)}</h1>${CF.seloConf(v) ? `<p>${CF.seloConf(v)}</p>` : ''}</div>
           <button class="fav em-linha ${fav ? 'on' : ''}" data-acao="fav" data-id="${v.id}" aria-label="Favoritar" aria-pressed="${fav}">${CF.ico('heart')}</button></div>
         ${pct != null ? `<p class="match-linha">Combina ${pct}% com o que você procura</p>` : ''}
         <dl class="specs">${spec('Ano', v.ano)}${spec('Km', num(v.km))}${spec('Câmbio', v.cambio)}${spec('Combustível', v.combustivel)}${spec('Tipo', v.tipo)}${spec('Cor', v.cor || '—')}</dl>

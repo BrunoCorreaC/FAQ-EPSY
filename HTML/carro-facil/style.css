@@ -243,4 +243,6 @@ details.editar .form { margin-top: 8px; }
 .mostrar input { width: 20px; min-height: 20px; accent-color: var(--brand); }
 #offline { background: #7a4a00; color: #fff; text-align: center; padding: 8px 16px; font-size: .9rem; font-weight: 600; position: sticky; top: 0; z-index: 70; }
 .verif { display: inline-flex; align-items: center; gap: 3px; background: var(--brand-soft); color: var(--brand-txt); border-radius: 99px; padding: 0 8px; font-size: .72rem; font-weight: 700; vertical-align: middle; white-space: nowrap; }
+.campo-placa { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; } .campo-placa .btn { min-height: 44px; }
+.placa-res { border: 1px solid var(--line, #d9ded6); border-radius: 12px; padding: 12px; background: var(--brand-soft); } .placa-res p { margin: 0 0 8px; }
 .verif .ico.peq { width: 12px; height: 12px; margin: 0; }

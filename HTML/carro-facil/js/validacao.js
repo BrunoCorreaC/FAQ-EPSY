@@ -58,6 +58,12 @@
     if (!c) return erro('Informe o CNPJ.');
     return V.cnpjValido(c) ? ok(c) : erro('CNPJ inválido. Confira os 14 números.');
   };
+  // placa antiga (ABC-1234) ou Mercosul (ABC1D23); devolve só letras e números em maiúsculas
+  V.placa = (raw, obrigatorio = true) => {
+    const p = String(raw ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!p) return obrigatorio ? erro('Informe a placa do veículo.') : ok(null);
+    return /^[A-Z]{3}\d{4}$/.test(p) || /^[A-Z]{3}\d[A-Z]\d{2}$/.test(p) ? ok(p) : erro('Placa inválida. Use o formato ABC-1234 ou ABC1D23.');
+  };
   V.uf = (raw, obrigatorio = true) => {
     const t = String(raw ?? '').trim();
     if (!t) return obrigatorio ? erro('Escolha o estado (UF).') : ok(null);
@@ -138,6 +144,7 @@
   // ---------- máscaras ----------
   const mascara = {
     tel: d => { d = d.replace(/\D/g, '').replace(/^55(?=\d{10,11}$)/, '').slice(0, 11); if (d.length <= 2) return d ? `(${d}` : ''; if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`; if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`; return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`; },
+    placa: d => { d = d.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7); return /^[A-Z]{3}\d{4}$/.test(d) ? d.slice(0, 3) + '-' + d.slice(3) : d; },
     cnpj: d => { d = d.replace(/\D/g, '').slice(0, 14); return d.replace(/^(\d{2})(\d)/, '$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d)/, '.$1/$2').replace(/(\d{4})(\d)/, '$1-$2'); }
   };
   document.addEventListener('input', e => { const m = e.target?.dataset?.mask; if (m && mascara[m] && e.inputType !== 'deleteContentBackward') e.target.value = mascara[m](e.target.value); });
@@ -147,6 +154,9 @@
   const MAPA = [
     ['limite_anuncios', 'Você atingiu o limite de anúncios ativos do seu plano. Pause ou conclua um anúncio, ou fale com a equipe para mudar de plano.'],
     ['foto_obrigatoria', 'Anúncios ativos precisam de ao menos 1 foto. Adicione uma foto ou salve como pausado.'],
+    ['placa_duplicada', 'Você já tem um anúncio (não vendido) com esta placa.'], ['placa_invalida', 'Placa inválida. Use o formato ABC-1234 ou ABC1D23.'],
+    ['limite_consultas', 'Você atingiu o limite de consultas de placa de hoje. Tente amanhã ou preencha os dados manualmente.'],
+    ['provedor_indisponivel', 'A consulta de placa ainda não está disponível. Preencha os dados manualmente.'], ['provedor_falhou', 'A consulta de placa falhou agora. Tente de novo em instantes ou preencha manualmente.'],
     ['foto_invalida', 'Uma das fotos é inválida. Remova e envie de novo.'],
     ['ano_invalido', `O ano não pode ser maior que ${ANO_MAX}.`],
     ['veiculos_preco_faixa_chk', `O valor deve estar entre ${CF.brl(500)} e ${CF.brl(10000000)}.`],

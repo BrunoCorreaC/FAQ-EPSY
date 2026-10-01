@@ -219,7 +219,7 @@
       const li = porV[x.id] ?? { t: 0, n: 0 };
       return `<article class="card veic horiz">
         <a class="foto" href="#/carro/${x.id}">${CF.fotoHtml(x)}</a>
-        <div class="corpo"><p class="preco">${brl(x.preco)}</p><h3>${esc(x.marca)} ${esc(x.modelo)} <span class="meta">${x.ano}</span></h3>
+        <div class="corpo"><p class="preco">${brl(x.preco)}</p><h3>${esc(x.marca)} ${esc(x.modelo)} <span class="meta">${x.ano}</span>${CF.seloConf(x)}</h3>
           <p class="meta">${matches[i]} cliente${matches[i] === 1 ? '' : 's'} buscando algo assim · ${li.t} interessado${li.t === 1 ? '' : 's'}${li.n ? ` (<strong>${li.n} novo${li.n === 1 ? '' : 's'}</strong>)` : ''}</p>
           <div class="acoes-linha"><select data-status="${x.id}" aria-label="Status">${['ativo', 'pausado', 'vendido'].map(s => `<option value="${s}" ${x.status === s ? 'selected' : ''}>${s[0].toUpperCase() + s.slice(1)}</option>`).join('')}</select>
             <a class="btn sec peq" href="#/veiculo/${x.id}/editar">Editar</a>
@@ -298,12 +298,17 @@
       v = (await CF.sb.from('veiculos').select('*').eq('id', +arg).eq('garagem_id', S.garagem.id).maybeSingle()).data;
       if (!v) return { html: '<section class="pagina vazio"><p>Veículo não encontrado.</p><a class="btn" href="#/painel">Voltar</a></section>' };
     }
+    const placaAtual = edit ? ((await CF.sb.from('veiculo_placas').select('placa').eq('veiculo_id', v.id).maybeSingle()).data?.placa ?? '') : '';
+    const exigePlaca = S.garagem.demo !== true;
     fotosForm = (v.fotos ?? []).map(p => ({ path: p, url: CF.fotoUrl(p) })).filter(f => f.url);
     const val = k => esc(v[k] ?? '');
     const anoMax = new Date().getFullYear() + 1;
     return {
       html: `<section class="pagina estreita"><a class="voltar" href="#/painel">← Meus veículos</a><h2>${edit ? 'Editar veículo' : 'Novo veículo'}</h2>
         <form class="form" id="vf">
+          <div class="campo-placa"><label class="campo">Placa${exigePlaca ? '' : ' (opcional)'}<input name="placa" data-mask="placa" maxlength="8" autocapitalize="characters" autocomplete="off" placeholder="ABC-1D23" value="${esc(CF.mascara.placa(placaAtual))}"></label>
+            <button class="btn sec" type="button" id="placa-ok">Consultar placa</button></div>
+          <div id="placa-res" class="placa-res" role="status" aria-live="polite" hidden></div>
           <div class="dupla"><label class="campo">Marca<input name="marca" list="marcas" maxlength="40" value="${val('marca')}"></label>
             <label class="campo">Modelo<input name="modelo" maxlength="60" placeholder="Ex.: Onix 1.0 LT" value="${val('modelo')}"></label></div>
           <datalist id="marcas">${MARCAS.map(m => `<option value="${m}">`).join('')}</datalist>
@@ -324,6 +329,27 @@
           <button class="btn grande" type="submit" id="vf-ok">${edit ? 'Salvar alterações' : 'Publicar anúncio'}</button></form><p class="meta" id="vf-msg" role="status"></p></section>`,
       bind() {
         pintaFotos();
+        $('placa-ok').onclick = async () => {
+          const f = $('vf'), box = $('placa-res'); CF.limpaErros(f);
+          const x = CF.validar(f, [['placa', t => CF.val.placa(t)]]); if (!x) return;
+          const btn = $('placa-ok'); btn.disabled = true; btn.textContent = 'Consultando…'; box.hidden = true;
+          try {
+            const r = await CF.sb.functions.invoke('consulta_placa', { body: { placa: x.placa } });
+            if (r.error) { let c = ''; try { c = (await r.error.context.json()).erro; } catch { /* sem corpo */ } throw new Error(c || r.error.message); }
+            const d = r.data.dados, titulo = s => String(s ?? '').toLowerCase().replace(/(^|\s)(\p{L})/gu, (_, a, b) => a + b.toUpperCase());
+            const marca = MARCAS.find(m => m.toLowerCase() === String(d.marca).toLowerCase()) ?? titulo(d.marca);
+            box.innerHTML = `<p><strong>${esc(marca)} ${esc(d.modelo)}</strong><br><span class="meta">Fabricação ${esc(d.ano_fabricacao)} · modelo ${esc(d.ano_modelo)} · ${esc(titulo(d.cor))} · ${esc(d.combustivel)}</span></p>
+              ${r.data.simulado ? '<p class="meta"><strong>Consulta de teste</strong>: dados fictícios, não geram o selo “Dados conferidos”.</p>' : '<p class="meta">Se os dados do anúncio baterem com estes, ele recebe o selo “Dados conferidos”.</p>'}
+              <button class="btn sec peq" type="button" id="placa-usa">Usar estes dados</button>`;
+            box.hidden = false;
+            $('placa-usa').onclick = () => {
+              const el = f.elements; el.marca.value = marca; el.modelo.value = d.modelo; el.ano.value = d.ano_modelo; el.cor.value = titulo(d.cor);
+              if (COMBUSTIVEIS.includes(d.combustivel)) el.combustivel.value = d.combustivel;
+              CF.limpaErros(f); CF.toast('Dados preenchidos. Confira e ajuste o que precisar.');
+            };
+          } catch (err) { CF.erroCampo(f, 'placa', CF.msgErro(err)); }
+          btn.disabled = false; btn.textContent = 'Consultar placa';
+        };
         $('arq').onchange = async e => {
           for (const file of [...e.target.files]) {
             if (fotosForm.length >= 6) { CF.toast('Máximo de 6 fotos.'); break; }
@@ -339,6 +365,7 @@
           msg('');
           const f = $('vf');
           const x = CF.validar(f, [
+            ['placa', t => CF.val.placa(t, exigePlaca)],
             ['marca', t => CF.val.texto(t, { max: 40, rotulo: 'a marca' })],
             ['modelo', t => CF.val.texto(t, { max: 60, rotulo: 'o modelo' })],
             ['ano', t => CF.val.inteiro(t, { min: CF.val.ANO_MIN, max: CF.val.ANO_MAX, rotulo: 'o ano', milhar: false })],
@@ -356,7 +383,7 @@
             tipo: f.elements.tipo.value, cor: x.cor, cidade: x.cidade, uf: x.uf, descricao: x.descricao ?? '', status: x.status };
           if ($('vf-ok').disabled) return;
           $('vf-ok').disabled = true; msg('Enviando…');
-          const enviadas = [];
+          const enviadas = []; let conferido = false;
           try {
             const fotos = [];
             for (const ft of fotosForm) {
@@ -367,15 +394,24 @@
             }
             dados.fotos = fotos;
             const r = edit ? await CF.sb.from('veiculos').update(dados).eq('id', v.id)
-                           : await CF.sb.from('veiculos').insert({ ...dados, garagem_id: S.garagem.id });
+                           : await CF.sb.from('veiculos').insert({ ...dados, garagem_id: S.garagem.id }).select('id').single();
             if (r.error) throw r.error;
+            if (x.placa) {
+              const idV = edit ? v.id : r.data.id;
+              const p = await CF.sb.rpc('definir_placa_veiculo', { p_veiculo: idV, p_placa: x.placa });
+              if (p.error) {
+                if (!edit) { await CF.sb.from('veiculos').delete().eq('id', idV); throw Object.assign(p.error, { placaErro: true }); }
+                throw p.error;
+              }
+              conferido = p.data === true;
+            }
             const removidas = (v.fotos ?? []).filter(p => !fotos.includes(p));
             if (removidas.length) CF.sb.storage.from('veiculos').remove(removidas);
           } catch (err) {
             if (enviadas.length) CF.sb.storage.from('veiculos').remove(enviadas).catch(() => {}); // não deixa foto órfã
             $('vf-ok').disabled = false; msg(CF.msgErro(err)); return;
           }
-          S.veiculos = null; CF.toast(edit ? 'Anúncio atualizado!' : 'Anúncio publicado!'); location.hash = '#/painel';
+          S.veiculos = null; CF.toast((edit ? 'Anúncio atualizado!' : 'Anúncio publicado!') + (conferido ? ' Dados conferidos ✓' : '')); location.hash = '#/painel';
         };
       }
     };
