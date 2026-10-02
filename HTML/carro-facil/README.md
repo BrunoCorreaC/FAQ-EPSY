@@ -74,4 +74,5 @@ Tudo com RLS; funções sensíveis (`SECURITY DEFINER`) checam o usuário por de
 8. **LGPD:** revisar com advogado os textos de consentimento e a política de privacidade antes de operar com clientes reais.
 
 ## Lojas (App Store / Google Play)
+Consulta de placa com dados reais: [`ATIVAR_PLACA.md`](ATIVAR_PLACA.md).
 Projeto Capacitor em `/mobile`, exigências das lojas em `supabase/008_lojas.sql` (exclusão de conta, denúncia, ocultar garagem, token de push) e checklist com custos em [`LANCAMENTO.md`](LANCAMENTO.md).
