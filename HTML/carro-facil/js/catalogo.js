@@ -311,6 +311,7 @@
         <div class="card garagem"><p class="meta">Anunciado por</p><h3>${esc(g.nome ?? 'Garagem')} ${g.demo === false ? `<span class="verif" title="Garagem com CNPJ verificado">${CF.ico('check', 'peq')}Verificada</span>` : ''}</h3><p class="meta">${CF.ico('pin', 'peq')} ${esc(v.cidade)}/${esc(v.uf)}</p>
           <div class="acoes">${botoesContato(S.telG[v.garagem_id], msg)}</div></div>
         <div class="card cta">${acao}</div>
+        ${CF.linhaDenuncia?.(v) ?? ''}
         <div class="aviso">${CF.ico('info', 'peq')} Antes de fechar: peça laudo cautelar e consulte débitos. <a href="#/guia">Ver guia</a> · <a href="#/simulador?valor=${Math.round(v.preco)}">Simular financiamento</a></div></section>`
     };
   };

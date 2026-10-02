@@ -18,7 +18,7 @@
   CF.liberada = () => S.assin?.liberada === true;
 
   // ---------- abas do administrador ----------
-  const ABAS = [['', 'Garagens'], ['assinaturas', 'Assinaturas'], ['cobrancas', 'Cobranças'], ['planos', 'Planos'], ['ajustes', 'Ajustes']];
+  const ABAS = [['', 'Garagens'], ['assinaturas', 'Assinaturas'], ['cobrancas', 'Cobranças'], ['planos', 'Planos'], ['denuncias', 'Denúncias'], ['ajustes', 'Ajustes']];
   CF.adminAbas = ativa => `<nav class="abas-admin" aria-label="Administração">${ABAS.map(([k, t]) => `<a href="#/admin${k ? '/' + k : ''}" class="${k === ativa ? 'ativa' : ''}" ${k === ativa ? 'aria-current="page"' : ''}>${t}</a>`).join('')}</nav>`;
   const falha = () => ({ html: `${CF.adminAbas('')}<section class="pagina vazio"><p>Não foi possível carregar.</p><button class="btn" data-acao="recarrega">Tentar de novo</button></section>` });
   const pagina = (aba, corpo) => ({ html: `<section class="pagina">${CF.adminAbas(aba)}${corpo}</section>` });
@@ -109,6 +109,27 @@
       <h3>Novo plano</h3><div class="card">${formPlano(null)}</div>`);
   };
 
+  // ---------- denúncias ----------
+  const STATUS_DEN = { aberta: 'Aberta', arquivada: 'Arquivada', garagem_suspensa: 'Garagem suspensa' };
+  const rotaDenuncias = async () => {
+    const r = await CF.sb.rpc('admin_denuncias'); if (r.error) return falha();
+    const l = r.data ?? [], abertas = l.filter(d => d.status === 'aberta').length;
+    return pagina('denuncias', `<h2>Denúncias</h2><p class="meta">${abertas ? `${abertas} aberta${abertas === 1 ? '' : 's'}.` : 'Nenhuma denúncia aberta.'} Apps nas lojas devem tratar denúncias com rapidez: responda em até 24 horas.</p>
+      ${l.map(d => `<article class="card adm"><h3>${esc(d.veiculo)} ${tag(STATUS_DEN[d.status] ?? d.status, d.status === 'aberta')}</h3>
+        <p class="meta">${esc(d.garagem)} · ${esc(CF.motivos?.[d.motivo] ?? d.motivo)} · ${new Date(d.criado_em).toLocaleDateString('pt-BR')}${d.abertas_na_garagem > 1 ? ` · <strong>${d.abertas_na_garagem} abertas nesta garagem</strong>` : ''}</p>
+        ${d.detalhe ? `<p>${esc(d.detalhe)}</p>` : ''}
+        ${d.status === 'aberta' ? `<div class="acoes-linha"><button class="btn sec peq" data-acao="denAcao" data-id="${d.id}" data-op="arquivar">Arquivar</button>
+          ${d.veiculo_id ? `<button class="btn sec peq" data-acao="denAcao" data-id="${d.id}" data-op="pausar_anuncio">Pausar anúncio</button>` : ''}
+          <button class="btn-link perigo peq" data-acao="denAcao" data-id="${d.id}" data-op="suspender_garagem">Suspender garagem</button></div>` : ''}</article>`).join('') || '<div class="vazio"><p>Sem denúncias.</p></div>'}`);
+  };
+  CF.acoes.denAcao = async el => {
+    if (el.dataset.op === 'suspender_garagem' && el.dataset.conf !== '1') { el.dataset.conf = '1'; el.textContent = 'Confirmar suspensão?'; return; }
+    el.disabled = true;
+    const { error } = await CF.sb.rpc('admin_resolver_denuncia', { p_id: +el.dataset.id, p_acao: el.dataset.op });
+    if (error) { el.disabled = false; CF.toastErro(error); return; }
+    CF.toast('Denúncia tratada.'); CF.render();
+  };
+
   // ---------- ajustes ----------
   const rotaAjustes = async () => {
     const r = await CF.sb.rpc('admin_config'); if (r.error) return falha();
@@ -125,7 +146,7 @@
   const garagens = CF.rotas.admin;
   CF.rotas.admin = async aba => {
     if (!S.admin) return garagens(aba);
-    const m = { assinaturas: rotaAssinaturas, cobrancas: rotaCobrancas, planos: rotaPlanos, ajustes: rotaAjustes }[aba];
+    const m = { assinaturas: rotaAssinaturas, cobrancas: rotaCobrancas, planos: rotaPlanos, denuncias: rotaDenuncias, ajustes: rotaAjustes }[aba];
     return m ? m() : garagens();
   };
 
@@ -190,7 +211,7 @@
     const zap = CF.cfg?.contatoComercial ? `<a class="btn zap" target="_blank" rel="noopener" href="${CF.wa(CF.cfg.contatoComercial, `Olá! Sou da ${S.garagem.nome} no Cadê meu carro? e quero falar sobre a minha assinatura.`)}">Falar com a equipe</a>` : '';
     if (a.status === 'sem_assinatura' || a.status === 'demo') {
       return { html: `<section class="pagina estreita"><h2>Assinatura</h2><div class="card"><p>${a.status === 'demo' ? 'Esta é uma garagem de demonstração.' : S.garagem.status_aprovacao === 'aprovada' ? 'Seu cadastro foi aprovado. Falta ativar a sua assinatura para anunciar veículos.' : 'Assim que o seu cadastro for aprovado, a equipe ativa a sua assinatura.'}</p>${zap}</div>
-        ${a.instrucoes ? `<div class="card"><h3>Como pagar</h3><p class="instr">${esc(a.instrucoes)}</p></div>` : ''}</section>` };
+        ${a.instrucoes && !CF.semPagamento ? `<div class="card"><h3>Como pagar</h3><p class="instr">${esc(a.instrucoes)}</p></div>` : ''}</section>` };
     }
     const msgs = {
       teste: `Período de teste até <strong>${dia(a.teste_ate)}</strong>. Depois começa a mensalidade.`,
@@ -206,7 +227,7 @@
       <div class="card"><div class="cab"><div><h3>${esc(a.plano.nome)}</h3><p class="preco">${reais(a.valor_centavos)}<small>/mês</small></p></div>${tag(STATUS_ASSIN[a.status], ruimAssin(a.status))}</div>
         <p class="${ruimAssin(a.status) ? 'aviso-linha' : ''}">${ruimAssin(a.status) ? CF.ico('info', 'peq') + ' ' : ''}${msgs[a.status] ?? ''}</p>
         <p class="meta">${a.plano.max_anuncios ? `Até ${a.plano.max_anuncios} anúncios ativos` : 'Anúncios ilimitados'} · ${a.plano.creditos_mensais} crédito(s) de contato por mês · vencimento todo dia ${a.dia_vencimento}</p>${a.plano.descricao ? `<p class="meta">${esc(a.plano.descricao)}</p>` : ''}</div>
-      ${abertas || a.instrucoes ? `<div class="card"><h3>Como pagar</h3>${a.instrucoes ? `<p class="instr">${esc(a.instrucoes)}</p>` : '<p class="meta">Fale com a equipe para receber os dados de pagamento.</p>'}<p class="meta">Depois de pagar, envie o comprovante para a equipe. A liberação é feita após a confirmação.</p>${zap}</div>` : ''}
+      ${(abertas || a.instrucoes) && !CF.semPagamento ? `<div class="card"><h3>Como pagar</h3>${a.instrucoes ? `<p class="instr">${esc(a.instrucoes)}</p>` : '<p class="meta">Fale com a equipe para receber os dados de pagamento.</p>'}<p class="meta">Depois de pagar, envie o comprovante para a equipe. A liberação é feita após a confirmação.</p>${zap}</div>` : ''}
       <h3>Últimas cobranças</h3>${(a.cobrancas ?? []).length ? `<ul class="cobrancas">${a.cobrancas.map(cob).join('')}</ul>` : '<div class="vazio"><p>Ainda não há cobranças.</p></div>'}</section>` };
   };
 })();

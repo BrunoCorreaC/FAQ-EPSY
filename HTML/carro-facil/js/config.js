@@ -6,5 +6,10 @@ window.CF_CONFIG = {
   // chave PÚBLICA de Web Push (a privada fica só no banco, tabela config_privada)
   vapidPublicKey: 'BFLHQfZmIyN2ZcbmtKrFj7Lnc3oncaMNN8jzHIXTx8I9J3lHuisbrexefRhvFtgqkCUQ4-h3kiS8IaamwoAAM8Q',
   // WhatsApp (55DDDNUMERO) da equipe para o garagista pedir créditos; vazio = só mostra o aviso
-  contatoComercial: ''
+  contatoComercial: '',
+  // ---- app das lojas e documentos (preencher antes de publicar) ----
+  appScheme: 'com.cademeucarro.app',   // esquema de retorno do login social no app (igual ao do capacitor.config)
+  razaoSocial: '', cnpjEmpresa: '', suporteEmail: '', dpoEmail: '',
+  documentosRevisados: false           // true depois da revisão jurídica: remove o aviso "Minuta"
+
 };

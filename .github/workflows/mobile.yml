@@ -1,0 +1,21 @@
+# Gera o APK de teste do Android (manual: Actions -> "App Android (teste)" -> Run workflow).
+# O envio às lojas exige assinatura (keystore/certificados): veja mobile/README.md.
+name: App Android (teste)
+on: workflow_dispatch
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: mobile } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: mobile/package-lock.json }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 21 }
+      - run: npm ci
+      - run: npm run web
+      - run: npx cap sync android
+      - run: ./gradlew assembleDebug
+        working-directory: mobile/android
+      - uses: actions/upload-artifact@v4
+        with: { name: cade-meu-carro-debug-apk, path: mobile/android/app/build/outputs/apk/debug/app-debug.apk }

@@ -3,13 +3,12 @@
 //        -> se não há cache, chama o provedor -> grava no cache com a chave de serviço.
 // O selo "Dados conferidos" é decidido só pelo banco (placa_confere); o provedor "simulado" nunca gera selo.
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { consultaGenerica, type Dados } from "./provedor.ts";
 
 const URL_ = Deno.env.get("SUPABASE_URL")!;
 const admin = createClient(URL_, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const resp = (o: unknown, status = 200) => Response.json(o, { status, headers: CORS });
-
-type Dados = { marca: string; modelo: string; ano_fabricacao: number; ano_modelo: number; cor: string; combustivel: string };
 
 // Provedor de teste: dados determinísticos a partir da placa. NÃO é consulta real.
 function simulado(placa: string): Dados {
@@ -23,11 +22,14 @@ function simulado(placa: string): Dados {
   return base[h % base.length];
 }
 
-// Provedores reais: implementar conforme a documentação do contratado e devolver o formato Dados.
-// Fica de fora de propósito até haver conta/contrato: não inventamos o contrato de uma API que não vimos.
+// placa_provedor = "simulado" (teste, nunca gera selo) ou "generico" (qualquer API JSON configurada em config_privada; ver provedor.ts).
 async function consultaProvedor(provedor: string, placa: string): Promise<Dados> {
   if (provedor === "simulado") return simulado(placa);
-  throw new Error("provedor_nao_implementado");
+  if (provedor === "generico") {
+    const { data } = await admin.from("config_privada").select("chave,valor").like("chave", "placa_api_%");
+    return await consultaGenerica(Object.fromEntries((data ?? []).map((x) => [x.chave, x.valor])), placa);
+  }
+  throw new Error("provedor_nao_configurado");
 }
 
 Deno.serve(async (req) => {
@@ -53,6 +55,9 @@ Deno.serve(async (req) => {
     return resp({ ok: true, placa: pl, dados: novo, simulado: provedor === "simulado", cache: false });
   } catch (e) {
     await admin.from("placa_consultas").delete().eq("id", consulta_id); // falha do provedor não gasta a cota
-    return resp({ erro: (e as Error).message === "provedor_nao_implementado" ? "provedor_indisponivel" : "provedor_falhou" }, 502);
+    const m = (e as Error).message;
+    console.error("consulta_placa", m);
+    if (m === "placa_nao_encontrada") return resp({ erro: m }, 404);
+    return resp({ erro: m === "provedor_nao_configurado" ? "provedor_indisponivel" : "provedor_falhou" }, 502);
   }
 });

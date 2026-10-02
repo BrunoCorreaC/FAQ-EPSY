@@ -28,19 +28,22 @@
           <p class="auth-g"><strong>É garagista?</strong> Crie sua conta e escolha “Garagista” no perfil para anunciar seus carros e receber clientes interessados.</p></aside>
         <div class="auth-form"><h2 id="a-titulo">Entrar</h2>
         <button class="btn grande sec" id="a-google" type="button">Continuar com Google</button>
+        <button class="btn grande sec" id="a-apple" type="button">Continuar com Apple</button>
         <p class="meta ou">ou use e-mail e senha</p>
         <form class="form" id="a-form">
           <label class="campo">E-mail<input type="email" name="email" id="a-email" autocomplete="email" inputmode="email" maxlength="254"></label>
           <label class="campo">Senha<input type="password" name="senha" id="a-senha" autocomplete="current-password" maxlength="72"><small class="dica" id="a-dica" hidden>Mínimo 8 caracteres, com letras e números.</small></label>
           <label class="campo" id="a-conf-l" hidden>Confirmar senha<input type="password" name="conf" id="a-conf" autocomplete="new-password" maxlength="72"></label>
           <label class="mostrar"><input type="checkbox" id="a-ver"> Mostrar senha</label>
+          <label class="mostrar" id="a-termos-l" hidden><input type="checkbox" name="termos" id="a-termos"> Li e aceito os <a href="#/termos">Termos de Uso</a> e a <a href="#/privacidade">Política de Privacidade</a></label>
           <button class="btn grande" id="a-ok" type="submit">Entrar</button></form>
         <button class="btn-link" id="a-troca" type="button">Não tem conta? Criar conta</button>
         <button class="btn-link" id="a-esqueci" type="button">Esqueci a senha</button>
+        <p class="meta">Ao continuar, você concorda com os <a href="#/termos">Termos de Uso</a> e a <a href="#/privacidade">Política de Privacidade</a>.</p>
         <p class="meta" id="a-msg" role="status"></p></div></section>`,
       bind() {
         const msg = t => { $('a-msg').textContent = t; };
-        const volta = () => location.origin + location.pathname;
+        const volta = () => CF.redirect();
         let criar = false;
         $('a-troca').onclick = () => {
           criar = !criar;
@@ -48,13 +51,12 @@
           $('a-ok').textContent = criar ? 'Criar conta' : 'Entrar';
           $('a-troca').textContent = criar ? 'Já tem conta? Entrar' : 'Não tem conta? Criar conta';
           $('a-senha').autocomplete = criar ? 'new-password' : 'current-password'; msg('');
-          $('a-conf-l').hidden = !criar; $('a-dica').hidden = !criar; CF.limpaErros($('a-form'));
+          $('a-conf-l').hidden = !criar; $('a-dica').hidden = !criar; $('a-termos-l').hidden = !criar; CF.limpaErros($('a-form'));
         };
         $('a-ver').onchange = e => { $('a-senha').type = $('a-conf').type = e.target.checked ? 'text' : 'password'; };
-        $('a-google').onclick = async () => {
-          const { error } = await CF.sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: volta() } });
-          if (error) msg('Login com Google indisponível no momento.');
-        };
+        for (const [id, provider, nome] of [['a-google', 'google', 'Google'], ['a-apple', 'apple', 'Apple']]) {
+          $(id).onclick = async () => { try { await CF.oauth(provider); } catch { msg(`Login com ${nome} indisponível no momento.`); } };
+        }
         $('a-esqueci').onclick = async () => {
           const r = CF.val.email($('a-email').value);
           if (r.erro) { CF.erroCampo($('a-form'), 'email', r.erro); $('a-email').focus(); msg('Digite um e-mail válido acima e toque de novo em "Esqueci a senha".'); return; }
@@ -66,7 +68,8 @@
           const v = CF.validar($('a-form'), [
             ['email', x => CF.val.email(x)],
             ['senha', (x, a) => criar ? CF.val.senha(x, a.email) : (x ? { ok: x } : { erro: 'Informe a senha.' })],
-            ...(criar ? [['conf', (x, a) => x === $('a-senha').value ? { ok: x } : { erro: 'As senhas não são iguais.' }]] : [])
+            ...(criar ? [['conf', (x, a) => x === $('a-senha').value ? { ok: x } : { erro: 'As senhas não são iguais.' }],
+                         ['termos', () => $('a-termos').checked ? { ok: true } : { erro: 'Para criar a conta, aceite os Termos de Uso e a Política de Privacidade.' }]] : [])
           ]);
           if (!v) return;
           const email = v.email, password = v.senha;
@@ -74,7 +77,7 @@
           $('a-ok').disabled = true; msg('Aguarde…');
           let r;
           try {
-            r = criar ? await CF.sb.auth.signUp({ email, password, options: { emailRedirectTo: volta() } })
+            r = criar ? await CF.sb.auth.signUp({ email, password, options: { emailRedirectTo: volta(), data: { termos_versao: CF.docsVersao, termos_aceitos_em: new Date().toISOString() } } })
                       : await CF.sb.auth.signInWithPassword({ email, password });
           } catch (err) { r = { error: err }; }
           $('a-ok').disabled = false;
@@ -185,8 +188,9 @@
           ${g ? '<a class="btn sec" href="#/painel">Meus veículos</a><a class="btn sec" href="#/demanda">Clientes buscando</a><a class="btn sec" href="#/interessados">Interessados</a><a class="btn sec" href="#/radar">Radar de demanda</a>' : '<a class="btn sec" href="#/preferencias">Minhas preferências</a><a class="btn sec" href="#/favoritos">Favoritos</a>'}
           ${S.admin ? '<a class="btn sec" href="#/admin">Administração</a>' : ''}
           <button class="btn" data-acao="sair">Sair</button></div>
+        ${CF.contaExtras?.() ?? ''}
         ${p ? CF.push.cartao(g ? 'Avisos de novos clientes' : 'Avisos de novos carros', g ? 'Receba uma notificação quando um cliente procurar algo parecido com o seu estoque.' : 'Receba uma notificação quando entrar um carro parecido com a sua busca.') : ''}</section>`,
-      bind() { CF.push.liga(); }
+      bind() { CF.push.liga(); CF.contaBind?.(); }
     };
   };
   CF.acoes.sair = async () => { try { await CF.push.desvincula(); } catch { /* segue */ } await CF.sb.auth.signOut(); location.hash = '#/'; };
