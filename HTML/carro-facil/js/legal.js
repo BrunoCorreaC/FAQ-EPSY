@@ -11,7 +11,7 @@
   const doc = (titulo, corpo) => ({ html: `<section class="pagina estreita doc"><a class="voltar" href="#/">← Voltar</a><h2>${titulo}</h2>${aviso()}<p class="meta">Versão de ${CF.docsVersao}</p>${corpo}</section>` });
 
   CF.rotas.privacidade = async () => doc('Política de Privacidade', `
-    <p>O <strong>Cadê meu carro?</strong> é operado por ${emp()} (CNPJ ${cnpj()}), controladora dos dados pessoais tratados no aplicativo, conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018).</p>
+    <p>O <strong>${CF.marca}</strong> é operado por ${emp()} (CNPJ ${cnpj()}), controladora dos dados pessoais tratados no aplicativo, conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018).</p>
     <h3>Que dados coletamos</h3>
     <ul><li><strong>Conta:</strong> e-mail, senha (guardada de forma criptografada pelo provedor de autenticação) ou conta Google/Apple.</li>
       <li><strong>Perfil:</strong> nome, telefone, cidade e estado. Para garagistas: nome da garagem, CNPJ e telefone comercial.</li>
@@ -32,7 +32,7 @@
     <h3>Crianças</h3><p>O app não é destinado a menores de 18 anos.</p>`);
 
   CF.rotas.termos = async () => doc('Termos de Uso', `
-    <p>Ao criar uma conta ou usar o <strong>Cadê meu carro?</strong>, você concorda com estes termos e com a <a href="#/privacidade">Política de Privacidade</a>.</p>
+    <p>Ao criar uma conta ou usar o <strong>${CF.marca}</strong>, você concorda com estes termos e com a <a href="#/privacidade">Política de Privacidade</a>.</p>
     <h3>O que somos</h3><p>Uma plataforma que aproxima clientes e garagens. <strong>Não vendemos carros, não participamos da negociação e não garantimos</strong> a veracidade dos anúncios, o estado ou a documentação dos veículos. Confira o carro, os documentos e a procedência pessoalmente antes de pagar.</p>
     <h3>Clientes</h3><p>Informe dados verdadeiros. Você decide se autoriza que garagens vejam seu interesse e pode revogar quando quiser.</p>
     <h3>Garagistas</h3>
@@ -46,6 +46,6 @@
     <h3>Foro e contato</h3><p>Lei brasileira; foro do domicílio do consumidor. Dúvidas: ${mail()}.</p>`);
 
   CF.rotas.suporte = async () => doc('Suporte', `
-    <p>Precisa de ajuda? Escreva para <strong>${mail()}</strong>${cfg.contatoComercial ? ` ou chame no <a target="_blank" rel="noopener" href="${CF.wa(cfg.contatoComercial, 'Olá! Preciso de ajuda no Cadê meu carro?')}">WhatsApp</a>` : ''}.</p>
+    <p>Precisa de ajuda? Escreva para <strong>${mail()}</strong>${cfg.contatoComercial ? ` ou chame no <a target="_blank" rel="noopener" href="${CF.wa(cfg.contatoComercial, `Olá! Preciso de ajuda no ${CF.marca}`)}">WhatsApp</a>` : ''}.</p>
     <ul><li>Excluir sua conta: Minha conta → Excluir minha conta.</li><li>Denunciar um anúncio: abra o carro e toque em “Denunciar anúncio”.</li><li>Dúvidas sobre dados pessoais: ${dpo()}.</li></ul>`);
 })();

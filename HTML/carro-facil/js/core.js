@@ -35,8 +35,13 @@
   };
 
   const cfg = CF.cfg = window.CF_CONFIG || {};
+  CF.marca = cfg.marca || 'Cadê meu carro?';
+  // Três portais isolados (cliente, loja, admin): cada página declara o seu em <html data-portal>.
+  // Cada portal guarda a própria sessão: entrar no portal da loja não abre sessão no app do cliente nem no admin.
+  Object.defineProperty(CF, 'portal', { get: () => document.documentElement.dataset.portal || 'cliente', configurable: true });
+  CF.PAPEL_DO_PORTAL = { cliente: 'comprador', loja: 'garagista' };
   const sb = CF.sb = (window.supabase && cfg.supabaseUrl && cfg.supabaseKey)
-    ? window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, { auth: { flowType: 'pkce' } }) : null;
+    ? window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, { auth: { flowType: 'pkce', storageKey: `cmc-sessao-${CF.portal}` } }) : null;
 
   // estado
   const S = CF.s = {
@@ -46,7 +51,14 @@
   };
   CF.papel = () => S.perfil?.papel ?? null;
 
-  CF.fotoUrl = p => /^[0-9a-f-]{36}\/[\w.-]+$/i.test(p || '') ? `${cfg.supabaseUrl}/storage/v1/object/public/veiculos/${p}` : null;
+  // fotos: enviadas pelas lojas (bucket) ou ilustrações das garagens de demonstração (arquivos do próprio app)
+  CF.fotoUrl = p => /^[0-9a-f-]{36}\/[\w.-]+$/i.test(p || '') ? `${cfg.supabaseUrl}/storage/v1/object/public/veiculos/${p}`
+    : /^demo\/[\w.-]+$/.test(p || '') ? `${cfg.baseDemo ?? 'img/'}${p}` : null;
+  CF.fotoHtml = (v, i = 0) => {
+    const u = CF.fotoUrl(v.fotos?.[i]);
+    return u ? `<img src="${CF.esc(u)}" alt="${CF.esc(`${v.marca} ${v.modelo} ${v.ano}`)}" loading="lazy" decoding="async">`
+             : `<div class="ph">${CF.ico('car')}<span>Foto em breve</span></div>`;
+  };
 
   CF.toast = msg => {
     const t = document.getElementById('toast'); if (!t) return;
@@ -82,6 +94,23 @@
   // dados da conta após o login
   const carregaConta = async () => {
     const uid = S.user.id;
+    if (CF.portal === 'admin') { // o admin só precisa saber se é admin
+      S.perfil = (await sb.from('perfis').select('*').eq('id', uid).maybeSingle()).data ?? null;
+      S.admin = (await sb.rpc('sou_admin')).data === true; return;
+    }
+    if (CF.portal === 'loja') {
+      S.perfil = (await sb.from('perfis').select('*').eq('id', uid).maybeSingle()).data ?? null;
+      S.garagem = null; S.priv = null; S.assin = null;
+      if (S.perfil?.papel === 'garagista') {
+        S.garagem = (await sb.from('garagens').select('*').eq('owner_id', uid).maybeSingle()).data ?? null;
+        if (S.garagem) {
+          S.priv = (await sb.from('garagem_privado').select('cnpj,creditos').eq('garagem_id', S.garagem.id).maybeSingle()).data ?? null;
+          S.assin = (await sb.rpc('minha_assinatura')).data ?? null;
+        }
+        CF.push?.sincroniza().catch(() => {});
+      }
+      return;
+    }
     const [p, pr, tg, td, it, oc] = await Promise.all([
       sb.from('perfis').select('*').eq('id', uid).maybeSingle(),
       sb.from('preferencias').select('favoritos,passos,busca,autoriza_contato,autorizado_em').eq('user_id', uid).maybeSingle(),
@@ -92,14 +121,7 @@
     ]);
     S.ocultas = new Set((oc.data ?? []).map(x => x.garagem_id)); if (S.ocultas.size) S.veiculos = null; // recarrega o catálogo sem elas
     S.perfil = p.data ?? null;
-    S.garagem = null;
-    S.priv = null;
-    if (S.perfil?.papel === 'garagista') {
-      S.garagem = (await sb.from('garagens').select('*').eq('owner_id', uid).maybeSingle()).data ?? null;
-      if (S.garagem) S.priv = (await sb.from('garagem_privado').select('cnpj,creditos').eq('garagem_id', S.garagem.id).maybeSingle()).data ?? null;
-    }
-    S.assin = S.garagem ? ((await sb.rpc('minha_assinatura')).data ?? null) : null;
-    S.admin = (await sb.rpc('sou_admin')).data === true;
+    if (S.perfil && S.perfil.papel !== 'comprador') return; // conta de loja: o app do cliente não carrega nada dela
     S.autoriza = pr.data?.autoriza_contato === true; S.autorizadoEm = pr.data?.autorizado_em ?? null;
     S.telG = Object.fromEntries((tg.data ?? []).map(x => [x.garagem_id, x.telefone]));
     S.telD = Object.fromEntries((td.data ?? []).map(x => [x.chave, x.telefone])); S.telsOk = true;

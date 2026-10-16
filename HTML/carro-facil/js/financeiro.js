@@ -19,6 +19,7 @@
 
   // ---------- abas do administrador ----------
   const ABAS = [['', 'Garagens'], ['assinaturas', 'Assinaturas'], ['cobrancas', 'Cobranças'], ['planos', 'Planos'], ['denuncias', 'Denúncias'], ['ajustes', 'Ajustes']];
+  CF.ABAS_ADMIN = ABAS.map(([k, t]) => [k, t, { '': 'store', assinaturas: 'star', cobrancas: 'clock', planos: 'guide', denuncias: 'info', ajustes: 'lock' }[k]]);
   CF.adminAbas = ativa => `<nav class="abas-admin" aria-label="Administração">${ABAS.map(([k, t]) => `<a href="#/admin${k ? '/' + k : ''}" class="${k === ativa ? 'ativa' : ''}" ${k === ativa ? 'aria-current="page"' : ''}>${t}</a>`).join('')}</nav>`;
   const falha = () => ({ html: `${CF.adminAbas('')}<section class="pagina vazio"><p>Não foi possível carregar.</p><button class="btn" data-acao="recarrega">Tentar de novo</button></section>` });
   const pagina = (aba, corpo) => ({ html: `<section class="pagina">${CF.adminAbas(aba)}${corpo}</section>` });
@@ -205,10 +206,10 @@
 
   // ---------- visão do garagista ----------
   CF.rotas.assinatura = async () => {
-    if (CF.papel() !== 'garagista' || !S.garagem) return { html: '<section class="pagina vazio"><h2>Assinatura</h2><p>Esta área é para garagistas.</p><a class="btn" href="#/entrar?papel=garagista">Criar conta de garagista</a></section>' };
+    if (CF.papel() !== 'garagista' || !S.garagem) return { html: '<section class="pagina vazio"><h2>Assinatura</h2><p>Complete o cadastro da loja para ver a assinatura.</p><a class="btn" href="#/perfil">Completar cadastro</a></section>' };
     const r = await CF.sb.rpc('minha_assinatura'); if (r.error || !r.data) return { html: '<section class="pagina vazio"><p>Não foi possível carregar.</p><button class="btn" data-acao="recarrega">Tentar de novo</button></section>' };
     const a = r.data; S.assin = a;
-    const zap = CF.cfg?.contatoComercial ? `<a class="btn zap" target="_blank" rel="noopener" href="${CF.wa(CF.cfg.contatoComercial, `Olá! Sou da ${S.garagem.nome} no Cadê meu carro? e quero falar sobre a minha assinatura.`)}">Falar com a equipe</a>` : '';
+    const zap = CF.cfg?.contatoComercial ? `<a class="btn zap" target="_blank" rel="noopener" href="${CF.wa(CF.cfg.contatoComercial, `Olá! Sou da ${S.garagem.nome} no ${CF.marca} e quero falar sobre a minha assinatura.`)}">Falar com a equipe</a>` : '';
     if (a.status === 'sem_assinatura' || a.status === 'demo') {
       return { html: `<section class="pagina estreita"><h2>Assinatura</h2><div class="card"><p>${a.status === 'demo' ? 'Esta é uma garagem de demonstração.' : S.garagem.status_aprovacao === 'aprovada' ? 'Seu cadastro foi aprovado. Falta ativar a sua assinatura para anunciar veículos.' : 'Assim que o seu cadastro for aprovado, a equipe ativa a sua assinatura.'}</p>${zap}</div>
         ${a.instrucoes && !CF.semPagamento ? `<div class="card"><h3>Como pagar</h3><p class="instr">${esc(a.instrucoes)}</p></div>` : ''}</section>` };

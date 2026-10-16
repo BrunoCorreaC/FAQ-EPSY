@@ -23,14 +23,14 @@
 
   // ---------- clientes buscando ----------
   CF.rotas.demanda = async () => {
-    if (!ehGaragista()) return bloqueio('Clientes buscando', 'Esta área é para garagistas.', '<a class="btn" href="#/entrar?papel=garagista">Criar conta de garagista</a>');
+    if (!ehGaragista()) return bloqueio('Clientes buscando', 'Esta área é para garagistas.', '<a class="btn" href="#/perfil">Completar cadastro da loja</a>');
     if (!liberada()) return bloqueio(aprovada() ? 'Assinatura pendente' : 'Cadastro em análise', aprovada() ? 'Para ver os clientes que procuram carros parecidos com o seu estoque, mantenha a assinatura em dia.' : 'Assim que a sua garagem for aprovada, você verá aqui os clientes que procuram carros parecidos com o seu estoque.', `<a class="btn" href="${aprovada() ? '#/assinatura' : '#/painel'}">${aprovada() ? 'Ver assinatura' : 'Voltar ao painel'}</a>`);
     const [d, u] = await Promise.all([CF.sb.rpc('demandas_para_mim'), CF.sb.rpc('meus_desbloqueios')]);
     if (d.error) return { html: '<section class="pagina vazio"><p>Não foi possível carregar agora.</p><button class="btn" data-acao="recarrega">Tentar de novo</button></section>' };
     const lista = d.data ?? [], abertos = u.data ?? [];
     const contato = Object.fromEntries(abertos.map(x => [x.lead_ref, x]));
     const cred = S.priv?.creditos ?? 0;
-    const zap = x => `<a class="btn zap" target="_blank" rel="noopener" href="${CF.wa(wa(x.telefone), `Olá ${x.nome}! Aqui é da ${S.garagem.nome}. Vi que você procura ${CF.descreveBusca(x.busca).join(', ')} no Cadê meu carro? e tenho carros que combinam. Posso te mostrar?`)}">WhatsApp de ${esc(x.nome)}</a>`;
+    const zap = x => `<a class="btn zap" target="_blank" rel="noopener" href="${CF.wa(wa(x.telefone), `Olá ${x.nome}! Aqui é da ${S.garagem.nome}. Vi que você procura ${CF.descreveBusca(x.busca).join(', ')} no ${CF.marca} e tenho carros que combinam. Posso te mostrar?`)}">WhatsApp de ${esc(x.nome)}</a>`;
     const item = x => {
       const c = contato[x.lead_ref];
       return `<article class="card lead demanda"><div><p class="meta">Busca atualizada em ${data(x.atualizado_em)}</p>
@@ -38,7 +38,7 @@
         <p class="meta"><strong>${x.compat}</strong> ${x.compat === 1 ? 'veículo seu combina' : 'veículos seus combinam'}</p></div>
         <div class="acoes">${c ? zap(c) : `<button class="btn" data-acao="desbloqueia" data-id="${x.lead_ref}">Ver contato · 1 crédito</button>`}</div></article>`;
     };
-    const semCred = cred < 1 ? `<div class="aviso">Você está sem créditos. ${CF.cfg?.contatoComercial ? `<a target="_blank" rel="noopener" href="${CF.wa(CF.cfg.contatoComercial, 'Olá! Sou garagista no Cadê meu carro? e quero comprar créditos para ver contatos de clientes.')}">Falar com a equipe</a> para adquirir mais.` : 'Fale com a equipe do Cadê meu carro? para adquirir mais.'}</div>` : '';
+    const semCred = cred < 1 ? `<div class="aviso">Você está sem créditos. ${CF.cfg?.contatoComercial ? `<a target="_blank" rel="noopener" href="${CF.wa(CF.cfg.contatoComercial, `Olá! Sou garagista no ${CF.marca} e quero comprar créditos para ver contatos de clientes.`)}">Falar com a equipe</a> para adquirir mais.` : `Fale com a equipe do ${CF.marca} para adquirir mais.`}</div>` : '';
     return {
       html: `<section class="pagina estreita"><div class="cab"><div><h2>Clientes buscando</h2><p class="meta">Pessoas que autorizaram contato e procuram carros parecidos com o seu estoque. O contato só aparece depois de usar 1 crédito.</p></div>
         <span class="creditos" aria-label="Créditos">Créditos <strong>${cred}</strong></span></div>${semCred}

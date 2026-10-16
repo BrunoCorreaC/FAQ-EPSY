@@ -36,6 +36,22 @@ Garagem aprovada só anuncia e vê clientes com **assinatura mensal** em dia (ou
 - O garagista vê a própria situação em `#/assinatura` (plano, próxima cobrança, últimas cobranças e como pagar) e recebe push de nova mensalidade, atraso e suspensão.
 - **Recebimento:** por enquanto o admin confirma o pagamento (Pix/boleto/dinheiro). Cobrança automática em cartão ou débito exige contratar um provedor (Asaas, Mercado Pago, Stripe…); as tabelas já têm `gateway`/`gateway_ref`.
 
+## Três portais isolados
+
+| Portal | Endereço | Quem usa | O que tem |
+|---|---|---|---|
+| App do cliente | `index.html` | quem procura carro | catálogo, "Para você", favoritos, guia, despachantes, simulador, conta |
+| Portal da Loja | `loja.html` | garagistas | estoque, clientes buscando, interessados, radar, assinatura |
+| Administração | `admin.html` | equipe | garagens, assinaturas, cobranças, planos, denúncias, ajustes |
+
+- Cada portal só conhece as próprias telas: abrir uma rota de outro portal mostra "Página não encontrada", e o menu nunca lista telas de outro perfil.
+- Cada portal guarda a **própria sessão** (`storageKey` diferente): entrar na loja não abre sessão no app do cliente nem no admin.
+- Conta de outro perfil é barrada com uma tela de saída (cliente no portal da loja, loja no app do cliente, qualquer não-admin na administração). O banco continua protegendo os dados por RLS.
+- O nome do produto fica em `js/config.js` (`marca`); trocar ali renomeia as telas.
+
+## Imagens dos carros de demonstração
+Ilustrações geradas para os 12 carros das garagens de demonstração (`img/demo/v<id>-<1..3>.jpg`: pátio, estúdio e detalhe), com o gerador em `ferramentas/imagens-demo/`. Não são fotos reais: lojas reais enviam as próprias fotos. Só garagens de demonstração podem usar caminhos `demo/` (`supabase/010_fotos_demo.sql`).
+
 ## Validações e diferenciais
 
 - **Cliente e garagista**: nome, telefone (DDD e formato BR), e-mail, senha (8+ com letra e número), CNPJ (dígitos verificadores), UF, anos, preços e km são validados na tela, com erro ao lado do campo, e novamente no banco (`supabase/005_validacoes.sql`).

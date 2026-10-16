@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-portal="admin">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#1b2229">
+  <meta name="description" content="Administração: aprovação de lojas, assinaturas, cobranças e denúncias.">
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <title>Administração · Cadê meu carro?</title>
+</head>
+<body>
+  <a class="pula" href="#app">Pular para o conteúdo</a>
+  <header class="topo">
+    <a class="marca" href="#/" aria-label="Início"><img src="icon.svg" alt="" width="32" height="32"><span data-marca>Cadê meu carro?</span></a>
+    <span class="rotulo-portal" data-rotulo-portal>Administração</span>
+  </header>
+  <nav class="abas" id="abas" aria-label="Menu" hidden></nav>
+
+  <main id="app" tabindex="-1"></main>
+  <dialog id="folha" aria-label="Filtros"></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/core.js"></script>
+  <script src="js/nativo.js"></script>
+  <script src="js/validacao.js"></script>
+  <script src="js/garagem.js"></script>
+  <script src="js/negocio.js"></script>
+  <script src="js/financeiro.js"></script>
+  <script src="js/lojas.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

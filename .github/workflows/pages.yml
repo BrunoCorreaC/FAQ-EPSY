@@ -30,7 +30,7 @@ jobs:
       - name: Copiar só o que o navegador precisa (sem SQL nem README)
         run: |
           mkdir _site
-          rsync -a --exclude 'supabase' --exclude 'README.md' HTML/carro-facil/ _site/
+          rsync -a --exclude 'supabase' --exclude 'ferramentas' --exclude '*.md' HTML/carro-facil/ _site/
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

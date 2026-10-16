@@ -7,6 +7,10 @@ window.CF_CONFIG = {
   vapidPublicKey: 'BFLHQfZmIyN2ZcbmtKrFj7Lnc3oncaMNN8jzHIXTx8I9J3lHuisbrexefRhvFtgqkCUQ4-h3kiS8IaamwoAAM8Q',
   // WhatsApp (55DDDNUMERO) da equipe para o garagista pedir créditos; vazio = só mostra o aviso
   contatoComercial: '',
+  // nome do produto em um lugar só (troque aqui para renomear o app inteiro)
+  marca: 'Cadê meu carro?',
+  // endereços dos outros portais (relativos ao site publicado)
+  urlCliente: 'index.html', urlLoja: 'loja.html',
   // ---- app das lojas e documentos (preencher antes de publicar) ----
   appScheme: 'com.cademeucarro.app',   // esquema de retorno do login social no app (igual ao do capacitor.config)
   razaoSocial: '', cnpjEmpresa: '', suporteEmail: '', dpoEmail: '',

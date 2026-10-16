@@ -1,5 +1,5 @@
-const CACHE = 'cade-meu-carro-v12';
-const ARQUIVOS = ['./', 'index.html', 'style.css', 'js/config.js', 'js/data.js', 'js/core.js', 'js/nativo.js', 'js/legal.js', 'js/lojas.js', 'js/validacao.js', 'js/push.js', 'js/catalogo.js', 'js/garagem.js', 'js/negocio.js', 'js/financeiro.js', 'js/extras.js', 'js/main.js', 'icon.svg', 'manifest.json'];
+const CACHE = 'cade-meu-carro-v13';
+const ARQUIVOS = ['./', 'index.html', 'style.css', 'js/config.js', 'js/data.js', 'js/core.js', 'js/nativo.js', 'js/legal.js', 'js/lojas.js', 'js/validacao.js', 'js/push.js', 'js/catalogo.js', 'js/garagem.js', 'js/negocio.js', 'js/financeiro.js', 'js/extras.js', 'js/main.js', 'icon.svg', 'manifest.json', 'loja.html', 'admin.html'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ARQUIVOS)));

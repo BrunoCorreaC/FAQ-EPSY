@@ -15,7 +15,7 @@
     const botoes = !CF.sb ? '<p class="meta">Contato indisponível.</p>'
       : !S.user ? `<a class="btn sec" href="#/entrar">${CF.ico('lock', 'peq')} Entre para ver o contato</a>`
       : !t ? `<p class="meta">${S.telsOk ? 'Contato indisponível.' : 'Carregando contato…'}</p>`
-      : `<a class="btn" href="tel:+${t}">${CF.ico('phone', 'peq')} ${esc(CF.fmtTel(t))}</a><a class="btn zap" target="_blank" rel="noopener" href="${CF.wa(t, 'Olá! Vi seu contato no app Cadê meu carro? e preciso de ajuda com a documentação de um carro.')}">WhatsApp</a>`;
+      : `<a class="btn" href="tel:+${t}">${CF.ico('phone', 'peq')} ${esc(CF.fmtTel(t))}</a><a class="btn zap" target="_blank" rel="noopener" href="${CF.wa(t, `Olá! Vi seu contato no ${CF.marca} e preciso de ajuda com a documentação de um carro.`)}">WhatsApp</a>`;
     return `<article class="card desp"><div><h3>${esc(d.nome)}</h3>
       <p class="meta">${CF.ico('pin', 'peq')} ${esc(d.bairro)}, ${esc(d.cidade)}${km != null ? ` · ${km.toFixed(km < 10 ? 1 : 0)} km de você` : ''}</p>
       <p class="meta">${CF.ico('clock', 'peq')} ${esc(d.horario)} · ${CF.ico('star', 'peq')} ${d.nota.toFixed(1)}</p>
@@ -44,11 +44,14 @@
   });
 
   CF.rotas.guia = async () => ({
-    html: `<section class="pagina estreita"><h2>Guia do primeiro carro</h2><p class="meta">Marque cada passo conforme for avançando.</p>
+    html: `<section class="pagina estreita"><h2>Guia do primeiro carro</h2>
+      <div class="atalhos"><a href="#/despachantes">${CF.ico('phone')}<span><strong>Despachantes</strong><small>Quem resolve a documentação</small></span></a>
+        <a href="#/simulador">${CF.ico('chart')}<span><strong>Simular parcelas</strong><small>Entrada, prazo e juros</small></span></a></div>
+      <p class="meta">Marque cada passo conforme for avançando.</p>
       <ol class="passos">${PASSOS.map((p, i) => `<li><label><input type="checkbox" data-passo="${i}" ${S.checks.includes(i) ? 'checked' : ''}>
         <span><strong>${esc(p.t)}</strong><small>${esc(p.d)}</small></span></label></li>`).join('')}</ol>
       <h3>Documentos que você vai precisar</h3><ul class="docs">${DOCUMENTOS.map(d => `<li>${esc(d)}</li>`).join('')}</ul>
-      <div class="acoes"><a class="btn grande" href="#/despachantes">Falar com um despachante</a><a class="btn sec grande" href="#/simulador">Simular financiamento</a></div></section>`,
+      </section>`,
     bind() {
       $('app').onchange = e => {
         const i = e.target.dataset.passo; if (i == null) return;

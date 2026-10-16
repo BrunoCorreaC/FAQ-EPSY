@@ -14,22 +14,27 @@
     ? null
     : CF.papel() === 'garagista' && S.garagem
     ? { html: `<section class="pagina vazio"><h2>${S.garagem.status_aprovacao === 'aprovada' ? 'Assinatura pendente' : 'Cadastro em análise'}</h2><p>${S.garagem.status_aprovacao === 'aprovada' ? 'Para anunciar veículos, a assinatura da sua garagem precisa estar ativa.' : 'Você poderá anunciar veículos assim que a sua garagem for aprovada.'}</p><a class="btn" href="${S.garagem.status_aprovacao === 'aprovada' ? '#/assinatura' : '#/painel'}">${S.garagem.status_aprovacao === 'aprovada' ? 'Ver assinatura' : 'Voltar ao painel'}</a></section>` }
-    : { html: `<section class="pagina vazio"><h2>Área do garagista</h2><p>Para anunciar veículos, crie uma conta de garagista.</p><a class="btn grande" href="${S.user ? '#/perfil' : '#/entrar?papel=garagista'}">${S.user ? 'Completar perfil' : 'Criar conta de garagista'}</a></section>` };
+    : { html: `<section class="pagina vazio"><h2>Cadastre sua loja</h2><p>Complete os dados da loja para começar a anunciar.</p><a class="btn grande" href="#/perfil">Completar cadastro</a></section>` };
 
   // ---------- entrar / criar conta ----------
   CF.rotas.entrar = async (_a, _b, params) => {
     if (!CF.sb) return { html: '<section class="pagina vazio"><p>Login indisponível: configure o Supabase em <code>js/config.js</code>.</p></section>' };
-    if (S.user) return { html: '<section class="pagina vazio"><p>Você já está conectado.</p><a class="btn" href="#/conta">Ir para a conta</a></section>' };
-    if (params.get('papel') === 'garagista') CF.store.set('cf_papel_hint', 'garagista');
+    if (S.user) return { html: '<section class="pagina vazio"><p>Você já está conectado.</p><a class="btn" href="#/">Continuar</a></section>' };
+    const P = CF.portal;
+    const TXT = {
+      cliente: ['Entre e ache o seu carro mais rápido', ['Veja o contato direto das lojas', 'Salve buscas e favoritos na sua conta', 'Seja avisado quando chegar um carro que combina']],
+      loja: ['Portal da Loja: seu estoque e quem procura por ele', ['Anuncie com fotos e placa conferida', 'Veja clientes buscando carros como os seus', 'Receba interessados direto no WhatsApp']],
+      admin: ['Administração', ['Aprovação de lojas', 'Assinaturas e cobranças', 'Denúncias']]
+    }[P];
+    const social = P !== 'admin';
     return {
-      html: `<section class="auth">
-        <aside class="auth-marca"><p class="eyebrow">Cadê meu carro?</p><h1>Entre e ache o seu carro mais rápido</h1>
-          <ul class="beneficios"><li>${CF.ico('check', 'peq')} Veja o contato direto das garagens</li><li>${CF.ico('check', 'peq')} Salve buscas e favoritos na sua conta</li><li>${CF.ico('check', 'peq')} Receba primeiro os carros que mais combinam</li></ul>
-          <p class="auth-g"><strong>É garagista?</strong> Crie sua conta e escolha “Garagista” no perfil para anunciar seus carros e receber clientes interessados.</p></aside>
+      html: `<section class="auth auth-${P}">
+        <aside class="auth-marca"><p class="eyebrow">${esc(CF.marca)}${P === 'cliente' ? '' : ` · ${P === 'loja' ? 'Portal da Loja' : 'Administração'}`}</p><h1>${TXT[0]}</h1>
+          <ul class="beneficios">${TXT[1].map(t => `<li>${CF.ico('check', 'peq')} ${t}</li>`).join('')}</ul></aside>
         <div class="auth-form"><h2 id="a-titulo">Entrar</h2>
-        <button class="btn grande sec" id="a-google" type="button">Continuar com Google</button>
+        ${social ? `<button class="btn grande sec" id="a-google" type="button">Continuar com Google</button>
         <button class="btn grande sec" id="a-apple" type="button">Continuar com Apple</button>
-        <p class="meta ou">ou use e-mail e senha</p>
+        <p class="meta ou">ou use e-mail e senha</p>` : ''}
         <form class="form" id="a-form">
           <label class="campo">E-mail<input type="email" name="email" id="a-email" autocomplete="email" inputmode="email" maxlength="254"></label>
           <label class="campo">Senha<input type="password" name="senha" id="a-senha" autocomplete="current-password" maxlength="72"><small class="dica" id="a-dica" hidden>Mínimo 8 caracteres, com letras e números.</small></label>
@@ -37,7 +42,7 @@
           <label class="mostrar"><input type="checkbox" id="a-ver"> Mostrar senha</label>
           <label class="mostrar" id="a-termos-l" hidden><input type="checkbox" name="termos" id="a-termos"> Li e aceito os <a href="#/termos">Termos de Uso</a> e a <a href="#/privacidade">Política de Privacidade</a></label>
           <button class="btn grande" id="a-ok" type="submit">Entrar</button></form>
-        <button class="btn-link" id="a-troca" type="button">Não tem conta? Criar conta</button>
+        ${P === 'admin' ? '' : `<button class="btn-link" id="a-troca" type="button">${P === 'loja' ? 'Ainda não anuncia? Cadastrar minha loja' : 'Não tem conta? Criar conta'}</button>`}
         <button class="btn-link" id="a-esqueci" type="button">Esqueci a senha</button>
         <p class="meta">Ao continuar, você concorda com os <a href="#/termos">Termos de Uso</a> e a <a href="#/privacidade">Política de Privacidade</a>.</p>
         <p class="meta" id="a-msg" role="status"></p></div></section>`,
@@ -45,16 +50,16 @@
         const msg = t => { $('a-msg').textContent = t; };
         const volta = () => CF.redirect();
         let criar = false;
-        $('a-troca').onclick = () => {
+        if ($('a-troca')) $('a-troca').onclick = () => {
           criar = !criar;
           $('a-titulo').textContent = criar ? 'Criar conta' : 'Entrar';
           $('a-ok').textContent = criar ? 'Criar conta' : 'Entrar';
-          $('a-troca').textContent = criar ? 'Já tem conta? Entrar' : 'Não tem conta? Criar conta';
+          $('a-troca').textContent = criar ? 'Já tem conta? Entrar' : (P === 'loja' ? 'Ainda não anuncia? Cadastrar minha loja' : 'Não tem conta? Criar conta');
           $('a-senha').autocomplete = criar ? 'new-password' : 'current-password'; msg('');
           $('a-conf-l').hidden = !criar; $('a-dica').hidden = !criar; $('a-termos-l').hidden = !criar; CF.limpaErros($('a-form'));
         };
         $('a-ver').onchange = e => { $('a-senha').type = $('a-conf').type = e.target.checked ? 'text' : 'password'; };
-        for (const [id, provider, nome] of [['a-google', 'google', 'Google'], ['a-apple', 'apple', 'Apple']]) {
+        if (social) for (const [id, provider, nome] of [['a-google', 'google', 'Google'], ['a-apple', 'apple', 'Apple']]) {
           $(id).onclick = async () => { try { await CF.oauth(provider); } catch { msg(`Login com ${nome} indisponível no momento.`); } };
         }
         $('a-esqueci').onclick = async () => {
@@ -114,17 +119,15 @@
   CF.rotas.perfil = async () => {
     if (!S.user) return { html: '<section class="pagina vazio"><p>Entre para continuar.</p><a class="btn" href="#/entrar">Entrar</a></section>' };
     const p = S.perfil, g = S.garagem;
-    const papel = p?.papel ?? CF.store.get('cf_papel_hint', 'comprador');
+    const papel = CF.PAPEL_DO_PORTAL[CF.portal];
     const tel = p ? CF.fmtTel(p.telefone) : '';
     return {
       html: `<section class="pagina estreita"><h2>${p ? 'Meu perfil' : 'Complete seu perfil'}</h2>
         <form class="form" id="pf">
-          <fieldset ${p ? 'disabled' : ''}><legend>Eu sou</legend><div class="seg grande" role="radiogroup">
-            <label><input type="radio" name="papel" value="comprador" ${papel === 'comprador' ? 'checked' : ''}><span>Cliente<small>Quero encontrar um carro</small></span></label>
-            <label><input type="radio" name="papel" value="garagista" ${papel === 'garagista' ? 'checked' : ''}><span>Garagista<small>Quero anunciar carros</small></span></label></div></fieldset>
+          ${p ? '' : `<p class="meta">${papel === 'garagista' ? 'Cadastre sua loja. Analisamos o CNPJ antes de liberar os anúncios.' : 'Só precisamos do básico para as lojas falarem com você quando você pedir.'}</p>`}
           <label class="campo">Seu nome<input name="nome" maxlength="80" autocomplete="name" value="${esc(p?.nome ?? '')}"></label>
           <label class="campo">WhatsApp com DDD<input name="telefone" data-mask="tel" inputmode="tel" autocomplete="tel" maxlength="16" placeholder="(48) 99999-9999" value="${esc(tel)}"></label>
-          <div class="so-garagista"><label class="campo">Nome da garagem/loja<input name="loja" maxlength="80" value="${esc(g?.nome ?? '')}"></label>
+          <div class="so-garagista" ${papel === 'garagista' ? '' : 'hidden'}><label class="campo">Nome da garagem/loja<input name="loja" maxlength="80" value="${esc(g?.nome ?? '')}"></label>
             <label class="campo">CNPJ<input name="cnpj" data-mask="cnpj" inputmode="numeric" maxlength="18" placeholder="00.000.000/0000-00" value="${esc(fmtCnpj(S.priv?.cnpj))}"></label>
             <p class="meta">Só garagens aprovadas anunciam e veem clientes. Analisamos o cadastro antes de liberar.</p></div>
           <div class="dupla"><label class="campo">Cidade<input name="cidade" maxlength="60" autocomplete="address-level2" value="${esc(p?.cidade ?? g?.cidade ?? '')}"></label>
@@ -133,12 +136,10 @@
           <button class="btn grande" type="submit" id="pf-ok">Salvar</button></form><p class="meta" id="pf-msg" role="status"></p></section>`,
       bind() {
         const f = $('pf');
-        const troca = () => { f.classList.toggle('e-garagista', f.elements.papel.value === 'garagista'); };
-        f.addEventListener('change', troca); troca();
         f.onsubmit = async e => {
           e.preventDefault(); const msg = t => { $('pf-msg').textContent = t; };
           msg('');
-          const papelSel = p?.papel ?? f.elements.papel.value;
+          const papelSel = papel;
           const gar = papelSel === 'garagista';
           const v = CF.validar(f, [
             ['nome', x => CF.val.nome(x)],
@@ -166,7 +167,7 @@
           } catch (err) { r = { error: err }; }
           $('pf-ok').disabled = false;
           if (r.error) { msg(CF.msgErro(r.error)); return; }
-          const novo = !p; CF.store.set('cf_papel_hint', null);
+          const novo = !p;
           await CF.recarregaConta(); CF.toast('Perfil salvo!');
           location.hash = papelSel === 'garagista' ? '#/painel' : (novo ? '#/preferencias' : '#/conta');
         };
@@ -179,14 +180,12 @@
     const p = S.perfil; const g = CF.papel() === 'garagista';
     return {
       html: `<section class="pagina estreita"><h2>Minha conta</h2>
-        <div class="card"><p><strong>${esc(p?.nome ?? S.user.email ?? '')}</strong> <span class="tag">${p ? (g ? 'Garagista' : 'Cliente') : 'Perfil incompleto'}</span></p>
+        <div class="card"><p><strong>${esc(p?.nome ?? S.user.email ?? '')}</strong> <span class="tag">${p ? (g ? 'Loja' : 'Cliente') : 'Perfil incompleto'}</span></p>
           <p class="meta">${esc(S.user.email ?? '')}${p ? ` · ${esc(CF.fmtTel(p.telefone))}` : ''}</p>
           ${g && S.garagem ? `<p class="meta">${CF.ico('store', 'peq')} ${esc(S.garagem.nome)} · ${esc(S.garagem.cidade)}/${esc(S.garagem.uf)} <span class="tag ${S.garagem.status_aprovacao === 'aprovada' ? '' : 'novo'}">${{ aprovada: 'Aprovada', pendente: 'Em análise', suspensa: 'Suspensa' }[S.garagem.status_aprovacao]}</span></p>` : ''}
           ${!g ? `<p class="meta">${S.favs.length} favorito(s) · ${S.checks.length} de ${PASSOS.length} passos do guia</p>` : ''}</div>
-        <div class="lista-links"><a class="btn sec" href="#/perfil">${p ? 'Editar perfil' : 'Completar perfil'}</a>
-          ${g ? '<a class="btn sec" href="#/assinatura">Minha assinatura</a>' : ''}
-          ${g ? '<a class="btn sec" href="#/painel">Meus veículos</a><a class="btn sec" href="#/demanda">Clientes buscando</a><a class="btn sec" href="#/interessados">Interessados</a><a class="btn sec" href="#/radar">Radar de demanda</a>' : '<a class="btn sec" href="#/preferencias">Minhas preferências</a><a class="btn sec" href="#/favoritos">Favoritos</a>'}
-          ${S.admin ? '<a class="btn sec" href="#/admin">Administração</a>' : ''}
+        <div class="lista-links"><a class="btn sec" href="#/perfil">${p ? (g ? 'Dados da loja' : 'Editar perfil') : 'Completar perfil'}</a>
+          ${g ? '<a class="btn sec" href="#/assinatura">Minha assinatura</a>' : '<a class="btn sec" href="#/preferencias">O que eu procuro</a><a class="btn sec" href="#/favoritos">Favoritos</a>'}
           <button class="btn" data-acao="sair">Sair</button></div>
         ${CF.contaExtras?.() ?? ''}
         ${p ? CF.push.cartao(g ? 'Avisos de novos clientes' : 'Avisos de novos carros', g ? 'Receba uma notificação quando um cliente procurar algo parecido com o seu estoque.' : 'Receba uma notificação quando entrar um carro parecido com a sua busca.') : ''}</section>`,
@@ -194,6 +193,8 @@
     };
   };
   CF.acoes.sair = async () => { try { await CF.push.desvincula(); } catch { /* segue */ } await CF.sb.auth.signOut(); location.hash = '#/'; };
+  // anúncio público: sempre no app do cliente (o portal da loja não mostra telas de cliente)
+  CF.linkAnuncio = id => `${CF.cfg.urlCliente ?? 'index.html'}#/carro/${id}`;
 
   // ---------- painel do garagista ----------
   CF.rotas.painel = async () => {
@@ -203,7 +204,7 @@
     const ok = aprov && CF.liberada(), as = S.assin ?? {};
     const d = x => x ? new Date(x + 'T12:00:00').toLocaleDateString('pt-BR') : '';
     const aviso = !aprov
-      ? `<div class="aviso">${S.garagem.status_aprovacao === 'suspensa' ? 'Seu cadastro está suspenso. Fale com a equipe do Cadê meu carro?.' : 'Seu cadastro está <strong>em análise</strong>. Assim que for aprovado você poderá anunciar veículos e ver clientes buscando. Confira o CNPJ e o WhatsApp em <a href="#/perfil">Meu perfil</a>.'}</div>`
+      ? `<div class="aviso">${S.garagem.status_aprovacao === 'suspensa' ? `Seu cadastro está suspenso. Fale com a equipe do ${CF.marca}.` : 'Seu cadastro está <strong>em análise</strong>. Assim que for aprovado você poderá anunciar veículos e ver clientes buscando. Confira o CNPJ e o WhatsApp em <a href="#/perfil">Meu perfil</a>.'}</div>`
       : as.status === 'sem_assinatura' ? '<div class="aviso">Cadastro aprovado. Falta ativar a sua assinatura para anunciar. <a href="#/assinatura">Ver detalhes</a></div>'
       : as.status === 'em_atraso' ? `<div class="aviso alerta">Mensalidade em atraso. Regularize até <strong>${d(as.bloqueio_em)}</strong> para manter os anúncios no ar. <a href="#/assinatura">Ver assinatura</a></div>`
       : as.status === 'suspensa' || as.status === 'cancelada' ? '<div class="aviso alerta">Assinatura suspensa: seus anúncios estão ocultos. <a href="#/assinatura">Regularizar</a></div>'
@@ -222,18 +223,18 @@
     const item = (x, i) => {
       const li = porV[x.id] ?? { t: 0, n: 0 };
       return `<article class="card veic horiz">
-        <a class="foto" href="#/carro/${x.id}">${CF.fotoHtml(x)}</a>
+        <a class="foto" href="${CF.linkAnuncio(x.id)}" target="_blank" rel="noopener" aria-label="Ver anúncio público">${CF.fotoHtml(x)}</a>
         <div class="corpo"><p class="preco">${brl(x.preco)}</p><h3>${esc(x.marca)} ${esc(x.modelo)} <span class="meta">${x.ano}</span>${CF.seloConf(x)}</h3>
           <p class="meta">${matches[i]} cliente${matches[i] === 1 ? '' : 's'} buscando algo assim · ${li.t} interessado${li.t === 1 ? '' : 's'}${li.n ? ` (<strong>${li.n} novo${li.n === 1 ? '' : 's'}</strong>)` : ''}</p>
           <div class="acoes-linha"><select data-status="${x.id}" aria-label="Status">${['ativo', 'pausado', 'vendido'].map(s => `<option value="${s}" ${x.status === s ? 'selected' : ''}>${s[0].toUpperCase() + s.slice(1)}</option>`).join('')}</select>
-            <a class="btn sec peq" href="#/veiculo/${x.id}/editar">Editar</a>
+            <a class="btn sec peq" href="#/veiculo/${x.id}/editar">Editar</a><a class="btn-link peq" href="${CF.linkAnuncio(x.id)}" target="_blank" rel="noopener">Ver anúncio</a>
             <button class="btn-link peq" data-acao="apaga" data-id="${x.id}">Excluir</button></div></div></article>`;
     };
     return {
       html: `<section class="pagina"><div class="boas"><div><p class="eyebrow">Painel do garagista</p><h2>${esc(S.garagem.nome)}</h2><p>${CF.ico('pin', 'peq')} ${esc(S.garagem.cidade)}/${esc(S.garagem.uf)}</p></div>
           ${ok ? '<a class="btn claro" href="#/veiculo/novo">+ Anunciar veículo</a>' : ''}</div>${aviso}
         <div class="kpis"><div><strong>${ativos}</strong><span>anúncios ativos</span></div><a href="#/interessados"><strong>${novos}</strong><span>interessados novos</span></a><div><strong>${buscando}</strong><span>buscas compatíveis</span></div></div>
-        ${lista.length ? `<div class="grade">${lista.map(item).join('')}</div>` : `<div class="vazio"><p>Você ainda não anunciou nenhum veículo.</p>${ok ? '<a class="btn grande" href="#/veiculo/novo">Cadastrar o primeiro</a>' : ''}</div>`}
+        ${lista.length ? `<div class="grade lista-estoque">${lista.map(item).join('')}</div>` : `<div class="vazio"><p>Você ainda não anunciou nenhum veículo.</p>${ok ? '<a class="btn grande" href="#/veiculo/novo">Cadastrar o primeiro</a>' : ''}</div>`}
         <p class="meta">"Buscas compatíveis" conta clientes com preferências salvas que combinam com o veículo, sem identificá-los.</p></section>`,
       bind() {
         document.querySelectorAll('[data-status]').forEach(s => s.onchange = async () => {
@@ -264,7 +265,7 @@
       return `<article class="card lead ${i.status}"><div><h3>${esc(i.nome)} ${i.status === 'novo' ? '<span class="tag novo">Novo</span>' : '<span class="tag">Atendido</span>'}</h3>
         <p class="meta">Interesse em <strong>${esc(carro)}</strong> · ${new Date(i.criado_em).toLocaleDateString('pt-BR')}</p>
         ${i.mensagem ? `<p class="citacao">“${esc(i.mensagem)}”</p>` : ''}</div>
-        <div class="acoes"><a class="btn zap" target="_blank" rel="noopener" href="${CF.wa(i.telefone, `Olá ${i.nome}! Aqui é da ${S.garagem.nome}. Vi seu interesse no ${carro} pelo app Cadê meu carro?.`)}">WhatsApp ${esc(CF.fmtTel(i.telefone))}</a>
+        <div class="acoes"><a class="btn zap" target="_blank" rel="noopener" href="${CF.wa(i.telefone, `Olá ${i.nome}! Aqui é da ${S.garagem.nome}. Vi seu interesse no ${carro} pelo app ${CF.marca}.`)}">WhatsApp ${esc(CF.fmtTel(i.telefone))}</a>
         ${i.status === 'novo' ? `<button class="btn sec" data-acao="atendido" data-id="${i.id}">Marcar atendido</button>` : ''}</div></article>`;
     };
     return { html: `<section class="pagina estreita"><h2>Interessados</h2>${l.length ? l.map(item).join('') : '<div class="vazio"><p>Quando um cliente tocar em "Tenho interesse" nos seus carros, ele aparece aqui.</p></div>'}</section>` };

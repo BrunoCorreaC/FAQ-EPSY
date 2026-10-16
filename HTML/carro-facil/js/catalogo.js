@@ -14,8 +14,13 @@
     { t: 'Até R$ 40 mil', f: { precoMax: 40000 } }, { t: 'Automático', f: { cambio: 'Automático' } },
     { t: 'SUV', f: { tipo: 'SUV' } }, { t: 'Baixa km', f: { kmMax: 40000 } }, { t: '2020 ou mais novo', f: { anoMin: 2020 } }
   ];
-  const COR = { Branco: '#e8ecea', Preto: '#2b2f2e', Prata: '#c3c9c7', Cinza: '#8a918f', Vermelho: '#d64545', Azul: '#3b78c4', Laranja: '#ec8a2c' };
-  const CARRO_SVG = '<svg viewBox="0 0 84 52" aria-hidden="true"><path d="M4 38 11 19Q12.5 15 17 15H67Q71.500 15 73 19L80 38V46H70V41H14V46H4Z" fill="currentColor"/><path d="M18 20H66L71 32H13Z" fill="var(--c,#fff)" opacity=".55"/><circle cx="19" cy="38" r="6" fill="var(--c,#fff)" stroke="currentColor" stroke-width="2"/><circle cx="65" cy="38" r="6" fill="var(--c,#fff)" stroke="currentColor" stroke-width="2"/></svg>';
+  // silhuetas por tipo (traço, mesma linguagem dos ícones)
+  const sil = d => `<svg class="sil" viewBox="0 0 64 28" aria-hidden="true"><path d="${d}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="16" cy="22" r="4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="48" cy="22" r="4" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+  const SILHUETA = {
+    Hatch: sil('M4 22V15l6-1 8-7h20l10 7 10 2v6h-6M22 22h20M10 22H4'), Sedan: sil('M3 22v-6l9-2 9-7h18l9 7 13 2v6h-7M22 22h20M10 22H3'),
+    SUV: sil('M4 22V11l4-5h28l10 7 13 2v7h-7M22 22h20M10 22H4'), Picape: sil('M3 22v-9h24V6h14l8 7h12v9h-7M22 22h20M10 22H3'),
+    'Utilitário': sil('M4 22V5h38l8 9 10 2v6h-6M22 22h20M10 22H4'), Outro: sil('M4 22V15l6-1 8-7h20l10 7 10 2v6h-6M22 22h20M10 22H4')
+  };
 
   const txt = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   const limpa = f => Object.fromEntries(Object.entries(f).filter(([k, v]) => k !== 'ordem' && v !== '' && v != null && !(typeof v === 'number' && isNaN(v))));
@@ -48,27 +53,21 @@
   CF.pontua = pontua;
   CF.descreveBusca = b => Object.entries(b || {}).map(([k, v]) => ROTULOS[k]?.(v)).filter(Boolean);
 
-  const foto = v => {
-    const u = CF.fotoUrl(v.fotos?.[0]);
-    return u ? `<img src="${esc(u)}" alt="" loading="lazy" decoding="async">`
-             : `<div class="ph" style="--c:${COR[v.cor] ?? '#cfd8d4'}">${CARRO_SVG}<span>Foto em breve</span></div>`;
-  };
-  CF.fotoHtml = foto;
+  const foto = v => CF.fotoHtml(v);
 
+  const verif = g => g?.demo === false ? `<span class="verif" title="Loja com CNPJ verificado">${CF.ico('check', 'peq')}Verificada</span>` : '';
   const card = (v, pct) => {
     const g = S.garagens[v.garagem_id]; const fav = S.favs.includes(v.id);
     const novo = Date.now() - new Date(v.criado_em) < 5 * 864e5;
-    return `<article class="card veic">
-      <a class="foto" href="#/carro/${v.id}" aria-label="${esc(v.marca + ' ' + v.modelo)}">${foto(v)}
-        ${novo ? '<span class="selo">Novo</span>' : ''}
-        ${pct != null ? `<span class="match ${pct >= 90 ? 'alto' : ''}">${pct}% combina</span>` : ''}</a>
-      <button class="fav ${fav ? 'on' : ''}" data-acao="fav" data-id="${v.id}" aria-label="Favoritar" aria-pressed="${fav}">${CF.ico('heart')}</button>
-      <div class="corpo">
-        <p class="preco">${brl(v.preco)}</p>
-        <h3><a href="#/carro/${v.id}">${esc(v.marca)} ${esc(v.modelo)}</a></h3>${CF.seloConf(v) ? `<p>${CF.seloConf(v)}</p>` : ''}
-        <p class="meta">${v.ano} · ${num(v.km)} km · ${esc(v.cambio)}</p>
-        <p class="meta local">${CF.ico('pin', 'peq')} ${esc(v.cidade)}/${esc(v.uf)}</p>
-        ${g ? `<p class="garagem-lin"><span class="avatar" aria-hidden="true">${esc((g.nome || '?')[0].toUpperCase())}</span>${esc(g.nome)}${g.demo === false ? ` <span class="verif" title="Garagem com CNPJ verificado">${CF.ico('check', 'peq')}Verificada</span>` : ''}</p>` : ''}
+    return `<article class="card-carro">
+      <a class="foto" href="#/carro/${v.id}" aria-label="${esc(`${v.marca} ${v.modelo} ${v.ano}, ${brl(v.preco)}`)}">${foto(v)}
+        <span class="etiqueta">${brl(v.preco)}</span>
+        ${pct != null ? `<span class="match ${pct >= 90 ? 'alto' : ''}">${pct}% do que você quer</span>` : novo ? '<span class="selo">Chegou agora</span>' : ''}</a>
+      <button class="fav ${fav ? 'on' : ''}" data-acao="fav" data-id="${v.id}" aria-label="Favoritar ${esc(v.modelo)}" aria-pressed="${fav}">${CF.ico('heart')}</button>
+      <div class="info">
+        <h3><a href="#/carro/${v.id}"><span>${esc(v.marca)}</span> ${esc(v.modelo)}</a></h3>
+        <p class="ficha"><span>${v.ano}</span><span>${num(v.km)} km</span><span>${esc(v.cambio)}</span></p>
+        <p class="loja-linha">${CF.ico('pin', 'peq')}<span>${esc(v.cidade)}/${esc(v.uf)}${g ? ` · ${esc(g.nome)}` : ''}</span>${verif(g)}${CF.seloConf(v)}</p>
       </div></article>`;
   };
   CF.cardCarro = card;
@@ -76,6 +75,7 @@
   const esqueleto = n => Array.from({ length: n }, () => '<div class="card veic sk"><div class="foto"></div><div class="corpo"><p class="preco">&nbsp;</p><p class="meta">&nbsp;</p></div></div>').join('');
   const erroCarga = () => `<div class="vazio"><p>Não foi possível carregar os carros agora.</p><button class="btn" data-acao="recarrega">Tentar de novo</button></div>`;
   CF.acoes.recarrega = async () => { S.veiculos = null; CF.render(); };
+  CF.acoes.rolaLista = () => document.getElementById('estoque')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
 
   // ---------- formulário de filtros (usado na folha de filtros e nas preferências) ----------
   const opts = (lista, sel, vazio) => `<option value="">${vazio}</option>` + lista.map(x => `<option ${x === sel ? 'selected' : ''}>${esc(x)}</option>`).join('');
@@ -166,7 +166,7 @@
     CF.salvaPrefs();
     document.querySelectorAll(`[data-acao="fav"][data-id="${id}"]`).forEach(b => {
       const on = S.favs.includes(id); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
-      if (b.classList.contains('btn')) b.textContent = on ? '♥ Favorito' : '♡ Favoritar';
+      const t = b.querySelector('span'); if (t) t.textContent = on ? 'Nos favoritos' : 'Guardar nos favoritos';
     });
     if (location.hash === '#/favoritos') CF.render();
   };
@@ -178,21 +178,36 @@
     const ativos = Object.entries(limpa(F));
     const V = S.veiculos, mostraHero = !ativos.length && CF.papel() !== 'garagista';
     const cont = {}; V.forEach(v => { cont[v.tipo] = (cont[v.tipo] || 0) + 1; });
+    const cidades = new Set(V.map(v => v.cidade)).size, lojas = new Set(V.map(v => v.garagem_id)).size;
+    const capa = [...V].filter(v => v.fotos?.length).sort((x, y) => new Date(y.criado_em) - new Date(x.criado_em))[0];
+    const faixas = [30000, 50000, 70000, 100000, 150000];
+    const ufsV = [...new Set(V.map(v => v.uf))].sort();
     const hero = mostraHero ? `
-      <section class="hero"><div class="hero-in">
-        <div class="hero-txt"><p class="eyebrow">Compra sem complicação</p>
-        <h1>Cadê meu carro?<br><span>Encontre o seu.</span></h1>
-        <p class="hero-sub">Filtre por região, modelo, ano e valor e fale direto com a garagem.</p>
-        <div class="hero-stats"><span><strong>${V.length}</strong> carros</span><span><strong>${new Set(V.map(v => v.garagem_id)).size}</strong> garagens</span><span><strong>${new Set(V.map(v => v.cidade)).size}</strong> cidades</span></div></div>
-        <ol class="hero-passos" aria-label="Como funciona"><li><b>1</b><span>Filtre por região, modelo, ano e valor</span></li><li><b>2</b><span>Salve sua busca e veja o que mais combina</span></li><li><b>3</b><span>Toque em “Tenho interesse” e fale com a garagem</span></li></ol>
-      </div></section>` : '';
+      <section class="abertura"><div class="abertura-in">
+        <div class="abertura-txt">
+          <p class="eyebrow">${V.length} carros · ${lojas} lojas · ${cidades} cidades</p>
+          <h1>Diga o carro que você quer. <em>As lojas vêm até você.</em></h1>
+          <form class="frase" id="frase" aria-label="Montar busca">
+            <span>Quero um</span><select name="tipo" aria-label="Tipo de carro"><option value="">carro</option>${TIPOS.filter(t => cont[t]).map(t => `<option>${t}</option>`).join('')}</select>
+            <span>até</span><select name="precoMax" aria-label="Valor máximo"><option value="">qualquer valor</option>${faixas.map(x => `<option value="${x}">${brl(x)}</option>`).join('')}</select>
+            <span>em</span><select name="uf" aria-label="Estado"><option value="">todo o Brasil</option>${ufsV.map(u => `<option>${u}</option>`).join('')}</select>
+            <button class="btn" type="submit" id="frase-ok">Ver carros</button></form>
+          <p class="abertura-nota">${S.user ? '<a href="#/preferencias">Salve o que procura</a> e avisamos quando chegar um carro assim.' : '<a href="#/entrar">Crie sua conta</a> para salvar o que procura e ser avisado quando chegar um carro assim.'}</p>
+        </div>
+        ${capa ? `<a class="abertura-foto" href="#/carro/${capa.id}">${foto(capa)}<span class="etiqueta">${brl(capa.preco)}</span><span class="legenda">${esc(capa.marca)} ${esc(capa.modelo)} ${capa.ano}</span></a>` : ''}
+      </div>
+      <ul class="confianca">
+        <li>${CF.ico('store')}<span><strong>Só lojas aprovadas</strong>CNPJ conferido antes de anunciar</span></li>
+        <li>${CF.ico('check')}<span><strong>Dados conferidos</strong>Marca, modelo e ano batem com a placa</span></li>
+        <li>${CF.ico('lock')}<span><strong>Você decide</strong>Lojas só falam com você se você pedir</span></li>
+      </ul></section>` : '';
     // destaques: com preferências salvas, os que mais combinam; senão, os mais recentes
     const bcv = S.busca && Object.keys(S.busca).length;
     const dest = mostraHero ? [...V].sort((a, b) => bcv ? (pontua(b, S.busca) - pontua(a, S.busca)) || (new Date(b.criado_em) - new Date(a.criado_em)) : new Date(b.criado_em) - new Date(a.criado_em)).slice(0, 6) : [];
-    const destaques = dest.length ? `<section class="destaques" aria-label="Em destaque"><h2>Em destaque</h2>
+    const destaques = dest.length ? `<section class="destaques" aria-label="Em destaque"><div class="titulo-secao"><h2>${bcv ? 'Combinam com você' : 'Chegaram agora'}</h2>${bcv ? '<a href="#/voce">Ver todos</a>' : '<button class="btn-link" data-acao="rolaLista">Ver estoque</button>'}</div>
       <div class="trilho">${dest.map(v => card(v, bcv ? pontua(v, S.busca) : null)).join('')}</div></section>` : '';
-    const cats = `<div class="cats" role="group" aria-label="Categorias">${TIPOS.filter(t => cont[t]).map(t =>
-      `<button class="cat ${F.tipo === t ? 'on' : ''}" data-acao="tipoCat" data-t="${t}"><strong>${t}</strong><span>${cont[t]} carro${cont[t] === 1 ? '' : 's'}</span></button>`).join('')}</div>`;
+    const cats = `<div class="cats" role="group" aria-label="Tipos de carro">${TIPOS.filter(t => cont[t]).map(t =>
+      `<button class="cat ${F.tipo === t ? 'on' : ''}" data-acao="tipoCat" data-t="${t}" aria-pressed="${F.tipo === t}">${SILHUETA[t] ?? SILHUETA.Hatch}<strong>${t}</strong><span>${cont[t]}</span></button>`).join('')}</div>`;
     const nFiltros = ativos.filter(([k]) => k !== 'q').length;
     return {
       html: `${hero}
@@ -209,10 +224,9 @@
         ${mostraHero || F.tipo ? cats : ''}
         ${ativos.filter(([k]) => k !== 'q').length ? `<div class="chips ativos">${ativos.filter(([k]) => k !== 'q').map(([k, v]) => `<button class="chip on" data-acao="removeFiltro" data-k="${k}" aria-label="Remover filtro ${esc(ROTULOS[k](v))}">${esc(ROTULOS[k](v))} ✕</button>`).join('')}
           <button class="chip salvar" data-acao="salvaBuscaAtual">★ Salvar como minha busca</button></div>` : ''}
-        <div class="linha-res"><p class="meta" id="contagem" role="status"></p>
+        <div class="linha-res" id="estoque"><h2 class="titulo-lista">Estoque</h2><p class="meta" id="contagem" role="status"></p>
           <label class="ordem">Ordenar <select id="ordem">${Object.entries(ORDENS).map(([k, t]) => `<option value="${k}" ${F.ordem === k ? 'selected' : ''}>${t}</option>`).join('')}</select></label></div>
         <div class="grade" id="lista"></div>
-        ${S.perfil?.papel !== 'garagista' && !S.user ? `<a class="faixa" href="#/entrar?papel=garagista"><strong>É garagista?</strong> Anuncie seus carros e receba clientes interessados →</a>` : ''}
       </section>`,
       bind() {
         const pinta = () => {
@@ -224,6 +238,10 @@
         pinta();
         document.getElementById('q').addEventListener('input', e => { F.q = e.target.value.trim(); pinta(); });
         document.getElementById('ordem').addEventListener('change', e => { F.ordem = e.target.value; pinta(); });
+        const fr = document.getElementById('frase');
+        if (fr) fr.onsubmit = e => { e.preventDefault();
+          for (const k of ['tipo', 'precoMax', 'uf']) { const x = fr.elements[k].value; if (x) F[k] = k === 'precoMax' ? +x : x; else delete F[k]; }
+          CF.render().then(() => document.getElementById('estoque')?.scrollIntoView({ block: 'start' })); };
       }
     };
   };
@@ -284,37 +302,51 @@
 
   CF.rotas.carro = async id => {
     try { await CF.carregaCatalogo(); } catch { return { html: `<section class="pagina">${erroCarga()}</section>` }; }
-    let v = S.veiculos.find(x => x.id === +id);
-    if (!v && S.user) { v = (await CF.sb.from('veiculos').select('*').eq('id', +id).maybeSingle()).data; if (v && !S.garagens[v.garagem_id]) S.garagens[v.garagem_id] = S.garagem ?? {}; }
-    if (!v) return { html: '<section class="pagina vazio"><p>Veículo não encontrado ou já vendido.</p><a class="btn" href="#/">Ver outros carros</a></section>' };
+    const v = S.veiculos.find(x => x.id === +id);
+    if (!v) return { html: '<section class="pagina vazio"><h2>Este carro saiu do catálogo</h2><p>Pode ter sido vendido ou pausado pela loja.</p><a class="btn" href="#/">Ver outros carros</a></section>' };
     const g = S.garagens[v.garagem_id] ?? {}; const fav = S.favs.includes(v.id);
-    const meu = S.garagem && S.garagem.id === v.garagem_id;
     const enviado = S.enviados.has(v.id);
-    const msg = `Olá! Tenho interesse no ${v.marca} ${v.modelo} ${v.ano} (${brl(v.preco)}) que vi no app Cadê meu carro?`;
-    const fotos = (v.fotos ?? []).map(CF.fotoUrl).filter(Boolean);
+    const msg = `Olá! Tenho interesse no ${v.marca} ${v.modelo} ${v.ano} (${brl(v.preco)}) que vi no ${CF.marca}`;
+    const n = (v.fotos ?? []).filter(p => CF.fotoUrl(p)).length;
     const pct = S.busca && Object.keys(S.busca).length ? pontua(v, S.busca) : null;
     const spec = (k, x) => `<div><dt>${k}</dt><dd>${esc(x)}</dd></div>`;
-    let acao;
-    if (meu) acao = `<a class="btn grande" href="#/veiculo/${v.id}/editar">Editar anúncio</a>`;
-    else if (CF.papel() === 'garagista') acao = '<p class="meta">Contas de garagista não demonstram interesse.</p>';
-    else if (enviado) acao = `<p class="ok">${CF.ico('check', 'peq')} Interesse enviado. O garagista vai entrar em contato.</p><button class="btn-link" data-acao="retiraInteresse" data-id="${v.id}">Retirar interesse</button>`;
-    else acao = `<label class="campo">Mensagem para o garagista (opcional)<textarea id="msg-int" maxlength="300" rows="2" placeholder="Ex.: Posso ver o carro no sábado?"></textarea></label>
-        <button class="btn grande destaque" data-acao="interesse" data-id="${v.id}">Tenho interesse</button>`;
+    const acao = enviado
+      ? `<p class="ok">${CF.ico('check', 'peq')} Interesse enviado. A loja vai falar com você.</p><button class="btn-link" data-acao="retiraInteresse" data-id="${v.id}">Retirar interesse</button>`
+      : `<label class="campo">Mensagem para a loja (opcional)<textarea id="msg-int" maxlength="300" rows="2" placeholder="Ex.: Posso ver o carro no sábado?"></textarea></label>
+        <button class="btn grande destaque" data-acao="interesse" data-id="${v.id}" id="cta-interesse">Tenho interesse</button>
+        <p class="meta">A loja recebe seu nome e WhatsApp e responde por lá.</p>`;
     return {
-      html: `<section class="pagina detalhe"><a class="voltar" href="#/">← Carros</a>
-        <div class="galeria">${fotos.length ? fotos.map(u => `<img src="${esc(u)}" alt="" loading="lazy">`).join('') : `<div class="ph grande" style="--c:${COR[v.cor] ?? '#cfd8d4'}">${CARRO_SVG}<span>Foto em breve</span></div>`}</div>
-        <div class="cab"><div><p class="preco grande">${brl(v.preco)}</p><h1>${esc(v.marca)} ${esc(v.modelo)}</h1>${CF.seloConf(v) ? `<p>${CF.seloConf(v)}</p>` : ''}</div>
-          <button class="fav em-linha ${fav ? 'on' : ''}" data-acao="fav" data-id="${v.id}" aria-label="Favoritar" aria-pressed="${fav}">${CF.ico('heart')}</button></div>
-        ${pct != null ? `<p class="match-linha">Combina ${pct}% com o que você procura</p>` : ''}
-        <dl class="specs">${spec('Ano', v.ano)}${spec('Km', num(v.km))}${spec('Câmbio', v.cambio)}${spec('Combustível', v.combustivel)}${spec('Tipo', v.tipo)}${spec('Cor', v.cor || '—')}</dl>
-        ${v.descricao ? `<p class="descricao">${esc(v.descricao)}</p>` : ''}
-        <div class="card garagem"><p class="meta">Anunciado por</p><h3>${esc(g.nome ?? 'Garagem')} ${g.demo === false ? `<span class="verif" title="Garagem com CNPJ verificado">${CF.ico('check', 'peq')}Verificada</span>` : ''}</h3><p class="meta">${CF.ico('pin', 'peq')} ${esc(v.cidade)}/${esc(v.uf)}</p>
-          <div class="acoes">${botoesContato(S.telG[v.garagem_id], msg)}</div></div>
-        <div class="card cta">${acao}</div>
-        ${CF.linhaDenuncia?.(v) ?? ''}
-        <div class="aviso">${CF.ico('info', 'peq')} Antes de fechar: peça laudo cautelar e consulte débitos. <a href="#/guia">Ver guia</a> · <a href="#/simulador?valor=${Math.round(v.preco)}">Simular financiamento</a></div></section>`
+      html: `<section class="pagina detalhe">
+        <a class="voltar" href="#/">${CF.ico('car', 'peq')} Voltar aos carros</a>
+        <div class="galeria-carro">
+          <div class="foto-principal" id="foto-principal">${foto(v)}</div>
+          ${n > 1 ? `<div class="miniaturas" role="group" aria-label="Fotos">${v.fotos.map((p, i) => CF.fotoUrl(p) ? `<button class="mini ${i ? '' : 'on'}" data-acao="verFoto" data-i="${i}" aria-label="Foto ${i + 1} de ${n}">${CF.fotoHtml(v, i)}</button>` : '').join('')}</div>` : ''}
+        </div>
+        <aside class="painel-compra">
+          <p class="etiqueta grande">${brl(v.preco)}</p>
+          <h1><span>${esc(v.marca)}</span> ${esc(v.modelo)}</h1>
+          <p class="selos">${verif(g)}${CF.seloConf(v)}${pct != null ? `<span class="match-linha">${pct}% do que você procura</span>` : ''}</p>
+          <dl class="specs">${spec('Ano', v.ano)}${spec('Quilometragem', `${num(v.km)} km`)}${spec('Câmbio', v.cambio)}${spec('Combustível', v.combustivel)}${spec('Tipo', v.tipo)}${spec('Cor', v.cor || '—')}</dl>
+          <div class="cta" id="cta">${acao}</div>
+          <div class="loja-card"><p class="meta">Vendido por</p><h3>${esc(g.nome ?? 'Loja')} ${verif(g)}</h3><p class="meta">${CF.ico('pin', 'peq')} ${esc(v.cidade)}/${esc(v.uf)}</p>
+            <div class="acoes">${botoesContato(S.telG[v.garagem_id], msg)}</div></div>
+          <button class="fav em-linha ${fav ? 'on' : ''}" data-acao="fav" data-id="${v.id}" aria-pressed="${fav}">${CF.ico('heart')}<span>${fav ? 'Nos favoritos' : 'Guardar nos favoritos'}</span></button>
+        </aside>
+        <div class="sobre">
+          ${v.descricao ? `<h2>Sobre este carro</h2><p class="descricao">${esc(v.descricao)}</p>` : ''}
+          <div class="aviso">${CF.ico('info', 'peq')} <span>Antes de pagar: peça o laudo cautelar e consulte débitos. <a href="#/guia">Guia do primeiro carro</a> · <a href="#/simulador?valor=${Math.round(v.preco)}">Simular parcelas</a></span></div>
+          ${CF.linhaDenuncia?.(v) ?? ''}
+        </div>
+        <div class="barra-compra"><span class="etiqueta">${brl(v.preco)}</span>${enviado ? '<span class="ok">Interesse enviado</span>' : '<button class="btn destaque" data-acao="irCta">Tenho interesse</button>'}</div>
+      </section>`
     };
   };
+  CF.acoes.verFoto = el => {
+    const v = S.veiculos.find(x => x.fotos?.length && location.hash.includes(`/carro/${x.id}`)); if (!v) return;
+    document.getElementById('foto-principal').innerHTML = CF.fotoHtml(v, +el.dataset.i);
+    document.querySelectorAll('.mini').forEach(m => m.classList.toggle('on', m === el));
+  };
+  CF.acoes.irCta = () => { document.getElementById('cta')?.scrollIntoView({ block: 'center', behavior: 'smooth' }); setTimeout(() => document.getElementById('msg-int')?.focus(), 400); };
 
   CF.acoes.interesse = async el => {
     if (!S.user) { location.hash = '#/entrar'; return; }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-portal="cliente">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -10,23 +10,24 @@
   <link rel="apple-touch-icon" href="icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <title>Cadê meu carro? | Encontre seu carro</title>
 </head>
 <body>
   <a class="pula" href="#app">Pular para o conteúdo</a>
   <header class="topo">
-    <a class="marca" href="#/" aria-label="Cadê meu carro? - início"><img src="icon.svg" alt="" width="30" height="30"><span>Cadê meu carro?</span></a>
+    <a class="marca" href="#/" aria-label="Início"><img src="icon.svg" alt="" width="32" height="32"><span data-marca>Cadê meu carro?</span></a>
+    <span class="rotulo-portal" data-rotulo-portal hidden></span>
     <nav class="abas" id="abas" aria-label="Navegação principal"></nav>
     <span class="topo-dir">
+      <a id="fav-link" class="icone-link" href="#/favoritos" aria-label="Favoritos"><svg class="ico" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.6-9.2-9.1C1.3 7.6 3.4 4 6.8 4c2 0 3.6 1.1 5.2 3 1.6-1.9 3.2-3 5.2-3 3.4 0 5.5 3.6 4 6.9C19 15.4 12 20 12 20z"/></svg> <span id="fav-count">0</span></a>
       <a id="conta-link" class="icone-link" href="#/entrar" hidden>Entrar</a>
-      <a class="icone-link" href="#/favoritos" aria-label="Favoritos"><svg class="ico" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.6-9.2-9.1C1.3 7.6 3.4 4 6.8 4c2 0 3.6 1.1 5.2 3 1.6-1.9 3.2-3 5.2-3 3.400 0 5.500 3.600 4 6.900C19 15.400 12 20 12 20z"/></svg> <span id="fav-count">0</span></a>
     </span>
   </header>
 
   <main id="app" tabindex="-1"></main>
-  <footer class="rodape"><a href="#/termos">Termos de Uso</a> · <a href="#/privacidade">Privacidade</a> · <a href="#/suporte">Suporte</a></footer>
+  <footer class="rodape" id="rodape"><a href="#/termos">Termos de Uso</a><a href="#/privacidade">Privacidade</a><a href="#/suporte">Suporte</a></footer>
   <dialog id="folha" aria-label="Filtros"></dialog>
   <div id="toast" role="status" aria-live="polite"></div>
 
@@ -39,8 +40,6 @@
   <script src="js/push.js"></script>
   <script src="js/catalogo.js"></script>
   <script src="js/garagem.js"></script>
-  <script src="js/negocio.js"></script>
-  <script src="js/financeiro.js"></script>
   <script src="js/extras.js"></script>
   <script src="js/legal.js"></script>
   <script src="js/lojas.js"></script>
